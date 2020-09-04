@@ -1,0 +1,4 @@
+[git-together]
+	domain = hotmail.com
+[git-together "authors"]
+	jg = "Joe Gaebel; joe.gaebel"

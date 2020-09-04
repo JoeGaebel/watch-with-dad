@@ -1,0 +1,14 @@
+{
+  "name": "api",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "Joe",
+  "license": "MIT",
+  "scripts": {
+    "test": "testcafe chrome test/*.ts"
+  },
+  "dependencies": {
+    "typescript": "4.0.2",
+    "testcafe": "1.9.2"
+  }
+}
