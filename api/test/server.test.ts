@@ -1,4 +1,13 @@
 import Server from "../src/server";
+import {
+    CreatedSessionFailure,
+    CreatedSessionSuccessfully,
+    CreateSessionEvent, JoinedSessionFailure,
+    JoinedSessionSuccessfully,
+    JoinSessionEvent, SendMessageEvent, ServerMessage
+} from "../../ui/src/types/shared";
+import {v4} from "uuid";
+
 const WebSocket = require("ws");
 
 describe('Server', () => {
@@ -20,19 +29,138 @@ describe('Server', () => {
         connection.onopen = () => done() && connection.close()
     });
 
-    it('forwards a message from one client to the other', (done) => {
+    it('responds successfully creating a session', (done) => {
         createServer();
 
-        const receiver = new WebSocket("ws://localhost:9090")
+        const createSession = new CreateSessionEvent(v4(), v4())
         const sender = new WebSocket("ws://localhost:9090")
 
-        const sentData = "G'day mate!"
-
-        receiver.onmessage = (event: MessageEvent) => {
-            expect(event.data).toEqual(sentData)
+        sender.onmessage = (event: MessageEvent) => {
+            const response = JSON.parse(event.data) as CreatedSessionSuccessfully
+            expect(response.type).toEqual("CREATED_SESSION_SUCCESSFULLY")
             done()
         }
 
-        sender.onopen = () => sender.send(sentData)
+        sender.onopen = () => {
+            sender.send(JSON.stringify(createSession))
+        }
     });
+
+    it('does not allow two sessions with the same id', (done) => {
+        createServer();
+
+        const sameUUID = v4()
+
+        const createSession = new CreateSessionEvent(sameUUID, v4())
+
+        const sender = new WebSocket("ws://localhost:9090")
+
+        let count = 0
+        sender.onmessage = (event: MessageEvent) => {
+            if (count == 0) {
+                const response = JSON.parse(event.data) as CreatedSessionSuccessfully
+                expect(response.type).toEqual("CREATED_SESSION_SUCCESSFULLY")
+                count++
+            } else {
+                const response = JSON.parse(event.data) as CreatedSessionFailure
+                expect(response.type).toEqual("CREATE_SESSION_FAILURE")
+                done()
+            }
+        }
+
+        sender.onopen = () => {
+            sender.send(JSON.stringify(createSession))
+            sender.send(JSON.stringify(createSession))
+        }
+    });
+
+    it('allows joining a session', (done) => {
+        createServer();
+
+        const sessionId = v4()
+
+        const createSession = new CreateSessionEvent(sessionId, v4())
+        const joinSession = new JoinSessionEvent(sessionId, v4())
+
+        const user1 = new WebSocket("ws://localhost:9090")
+        const user2 = new WebSocket("ws://localhost:9090")
+
+        user1.onmessage = (event: MessageEvent) => {
+            const response = JSON.parse(event.data) as CreatedSessionSuccessfully
+            expect(response.type).toEqual("CREATED_SESSION_SUCCESSFULLY")
+
+            user2.send(JSON.stringify(joinSession))
+        }
+
+        user2.onmessage = (event: MessageEvent) => {
+            const response = JSON.parse(event.data) as JoinedSessionSuccessfully
+            expect(response.type).toEqual("JOINED_SESSION_SUCCESSFULLY")
+            done()
+        }
+
+        user1.onopen = () => {
+            user1.send(JSON.stringify(createSession))
+        }
+    });
+
+    it('returns an error if there is no session to join', (done) => {
+        createServer();
+
+        const joinSession = new JoinSessionEvent(v4(), v4())
+
+        const user = new WebSocket("ws://localhost:9090")
+
+        user.onmessage = (event: MessageEvent) => {
+            const response = JSON.parse(event.data) as JoinedSessionFailure
+            expect(response.type).toEqual("JOIN_SESSION_FAILURE")
+            done()
+        }
+
+        user.onopen = () => {
+            user.send(JSON.stringify(joinSession))
+        }
+    });
+
+    it('forwards a message from one client to the other', (done) => {
+        createServer();
+
+        const sessionId = v4()
+        const user1Id = v4();
+        const user2Id = v4();
+
+        const createSession = new CreateSessionEvent(sessionId, user1Id)
+        const joinSession = new JoinSessionEvent(sessionId, user2Id)
+
+        const user1 = new WebSocket("ws://localhost:9090")
+        const user2 = new WebSocket("ws://localhost:9090")
+
+        let user1MessageCount = 0
+        user1.onmessage = (event: MessageEvent) => {
+            if (user1MessageCount == 0) {
+                const response = JSON.parse(event.data) as CreatedSessionSuccessfully
+                expect(response.type).toEqual("CREATED_SESSION_SUCCESSFULLY")
+
+                user2.send(JSON.stringify(joinSession))
+                user1MessageCount++
+            } else {
+                const response = JSON.parse(event.data) as ServerMessage
+                expect(response.type).toEqual("SERVER_MESSAGE")
+                expect(response.message).toEqual("G'Day m8!")
+
+                done()
+            }
+        }
+
+        user2.onmessage = (event: MessageEvent) => {
+            const response = JSON.parse(event.data) as JoinedSessionSuccessfully
+            expect(response.type).toEqual("JOINED_SESSION_SUCCESSFULLY")
+            const message = JSON.stringify(new SendMessageEvent("G'Day m8!", sessionId, user2Id))
+
+            user2.send(message)
+        }
+
+        user1.onopen = () => {
+            user1.send(JSON.stringify(createSession))
+        }
+    })
 })
