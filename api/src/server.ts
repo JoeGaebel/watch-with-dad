@@ -10,11 +10,12 @@ import {
     SendMessageEvent,
     ServerMessage
 } from "../../ui/src/types/shared";
+import {CloseEvent} from "ws";
 
 
 export default class Server {
     private socketServer?: WebSocket.Server
-    private sessions: Map<string, Map<string, WebSocket>> = new Map()
+    sessions: Map<string, Map<string, WebSocket>> = new Map()
 
     private port = 9090
 
@@ -25,6 +26,10 @@ export default class Server {
         this.socketServer.on("connection", (connection: WebSocket) => {
             connection.onmessage = (event: WebSocket.MessageEvent) => {
                 this.triageMessage(event, connection)
+            }
+
+            connection.onclose = (event: WebSocket.CloseEvent) => {
+                this.promptConnectionToCleanUp(event, connection)
             }
         })
     }
@@ -56,6 +61,10 @@ export default class Server {
             return
         }
 
+        connection.addEventListener("clean-up", () => {
+            this.cleanUpConnection(event.sessionId, event.userId)
+        })
+
         const users = new Map<string, WebSocket>()
         users.set(event.userId, connection)
         this.sessions.set(event.sessionId, users)
@@ -71,6 +80,10 @@ export default class Server {
             connection.send(joinFailed)
             return
         }
+
+        connection.addEventListener("clean-up", () => {
+            this.cleanUpConnection(event.sessionId, event.userId)
+        })
 
         session.set(event.userId, connection)
 
@@ -91,6 +104,22 @@ export default class Server {
             if (userId === event.userId) return
             savedConnection.send(sendMessage)
         })
+    }
+
+    promptConnectionToCleanUp(event: CloseEvent, connection: WebSocket) {
+        connection.emit("clean-up")
+    }
+
+    cleanUpConnection(sessionId: string, userId: string) {
+        const session = this.sessions.get(sessionId)
+
+        if (session) {
+            session.delete(userId)
+
+            if (session.size === 0) {
+                this.sessions.delete(sessionId)
+            }
+        }
     }
 
     close() {

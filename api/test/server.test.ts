@@ -163,4 +163,77 @@ describe('Server', () => {
             user1.send(JSON.stringify(createSession))
         }
     })
+
+    describe("session management", () => {
+        function sleep(ms: number) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function waitForTruth(test: () => boolean, attempts: number): Promise<void> {
+            return new Promise<void>(async (resolve, reject) => {
+                let i = 0;
+                while (i < attempts) {
+                    if (test()) {
+                        return resolve()
+                    }
+
+                    await sleep(1000)
+                    i++
+                }
+                fail()
+                reject()
+            })
+        }
+
+        async function checkClosingBehavior(
+            sessionId: string,
+            done: jest.DoneCallback,
+            user1: WebSocket,
+            user2: WebSocket
+        ) {
+            const sessions = server.sessions
+            expect(sessions.size).toEqual(1)
+
+            const session = sessions.get(sessionId)
+            expect(session!!.size).toEqual(2)
+
+            user1.close()
+            await waitForTruth(() => session!!.size === 1, 3)
+
+            user2.close()
+            await waitForTruth(() => session!!.size === 0, 3)
+
+            expect(sessions.size).toEqual(0)
+            done()
+        }
+
+        it('cleans up users and sessions', (done) => {
+            createServer();
+
+            const sessionId = v4()
+            const createSession = new CreateSessionEvent(sessionId, v4())
+            const joinSession = new JoinSessionEvent(sessionId, v4())
+
+            const user1 = new WebSocket("ws://localhost:9090")
+            const user2 = new WebSocket("ws://localhost:9090")
+
+            user1.onmessage = (event: MessageEvent) => {
+                const response = JSON.parse(event.data) as CreatedSessionSuccessfully
+                expect(response.type).toEqual("CREATED_SESSION_SUCCESSFULLY")
+
+                user2.send(JSON.stringify(joinSession))
+            }
+
+            user2.onmessage = (event: MessageEvent) => {
+                const response = JSON.parse(event.data) as JoinedSessionSuccessfully
+                expect(response.type).toEqual("JOINED_SESSION_SUCCESSFULLY")
+
+                checkClosingBehavior(sessionId, done, user1, user2)
+            }
+
+            user1.onopen = () => {
+                user1.send(JSON.stringify(createSession))
+            }
+        });
+    });
 })
