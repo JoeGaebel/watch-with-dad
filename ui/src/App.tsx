@@ -84,7 +84,7 @@ function App() {
             {joinSessionFailure && <div>Failed to join session :(</div>}
             {createSessionFailure && <div>Failed to create session :(</div>}
 
-            {connectedToServer && <div data-testid="session-container">
+            {connectedToServer && !connectedToSession && <div data-testid="session-container">
                 <button onClick={createSession}>Create Session</button>
                 <div>
                     <button onClick={() => joinSession(joinSessionIdInput)}>Join Session</button>

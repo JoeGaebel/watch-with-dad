@@ -176,6 +176,20 @@ describe('App', () => {
             expect(renderResult.queryByTestId("message-container")).not.toBeInTheDocument()
         })
 
+        it('hides the session stuff after connecting', async (done) => {
+            createServer();
+
+            await spoofSuccessfulCreateSession(async () => {
+                await waitFor(() => {
+                    expect(renderResult.queryByTestId("session-container")).not.toBeInTheDocument()
+                })
+                server.close()
+                done()
+            })
+
+            const renderResult = await renderAndCreateSession()
+        })
+
         it('displays an error when it fails', async (done) => {
             createServer();
 
