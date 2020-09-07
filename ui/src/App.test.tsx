@@ -5,10 +5,15 @@ import * as WebSocket from 'ws'
 import {act} from "react-dom/test-utils";
 import {
     CreatedSessionFailure,
-    CreatedSessionSuccessfully, CreateSessionEvent,
+    CreatedSessionSuccessfully,
+    CreateSessionEvent,
     JoinedSessionFailure,
-    JoinedSessionSuccessfully, JoinSessionEvent, SendMessageEvent, ServerMessage
+    JoinedSessionSuccessfully,
+    JoinSessionEvent,
+    SendMessageEvent,
+    ServerMessage
 } from "./types/shared";
+import {v4} from "uuid";
 
 
 describe('App', () => {
@@ -49,7 +54,7 @@ describe('App', () => {
         const sessionIdInput = renderResult.getByTestId("session-id")
         const joinSessionButton = renderResult.getByText('Join Session')
 
-        fireEvent.change(sessionIdInput, {target: {value: "some-session-id"}})
+        fireEvent.change(sessionIdInput, {target: {value: v4()}})
         fireEvent.click(joinSessionButton)
 
         return renderResult
@@ -126,56 +131,7 @@ describe('App', () => {
         })
     }
 
-    describe("creating a session", () => {
-        it('sends correct data', async (done) => {
-            createServer();
-
-            onServerMessage((message: string) => {
-                const parsedEvent = JSON.parse(message) as CreateSessionEvent
-                expect(parsedEvent.sessionId).toMatch(new RegExp(uuidRegex))
-                expect(parsedEvent.type).toMatch("CREATE_SESSION")
-                expect(parsedEvent.userId).toMatch(new RegExp(uuidRegex))
-
-                expect(parsedEvent.userId).not.toEqual(parsedEvent.sessionId)
-                server.close()
-                done()
-            })
-
-            await renderAndCreateSession()
-        });
-
-        it('displays connected status when it works', async (done) => {
-            createServer();
-
-            await spoofSuccessfulCreateSession(async () => {
-                await waitFor(() => {
-                    const connectedMessageRegex = new RegExp(`Connected to session! ${uuidRegex}`)
-                    expect(renderResult.getByTestId("session-status").textContent).toMatch(connectedMessageRegex)
-                })
-
-                server.close()
-                done()
-            })
-
-            const renderResult = await renderAndCreateSession()
-        })
-
-        it('displays the message container after creating the session', async (done) => {
-            createServer();
-
-            await spoofSuccessfulCreateSession(async () => {
-                await waitFor(() => {
-                    expect(renderResult.queryByTestId("message-container")).toBeInTheDocument()
-                })
-
-                server.close()
-                done()
-            })
-
-            const renderResult = await renderAndCreateSession()
-            expect(renderResult.queryByTestId("message-container")).not.toBeInTheDocument()
-        })
-
+    function assertItHidesTheSessionStuff(renderFunction: () => Promise<RenderResult>) {
         it('hides the session stuff after connecting', async (done) => {
             createServer();
 
@@ -187,50 +143,39 @@ describe('App', () => {
                 done()
             })
 
-            const renderResult = await renderAndCreateSession()
+            const renderResult = await renderFunction()
         })
+    }
 
-        it('displays an error when it fails', async (done) => {
+    function assertShowingMessageContainer(
+        spoofFunction: (arg: any) => Promise<void>,
+        renderFunction: () => Promise<RenderResult>
+    ) {
+        it('displays the message container after connecting to session', async (done) => {
             createServer();
 
-            await spoofFailureToCreateSession(async () => {
+            await spoofFunction(async () => {
                 await waitFor(() => {
-                    expect(renderResult.getByText("Failed to create session :(")).toBeInTheDocument()
-                })
-
-                done()
-            })
-
-            const renderResult = await renderAndJoinSession()
-            expect(renderResult.queryByText("Failed to create session :(")).not.toBeInTheDocument()
-        })
-
-        it('receives the data from the server', async (done) => {
-            createServer();
-
-            await spoofSuccessfulCreateSession(async (connection) => {
-                const serverMessage1 = JSON.stringify(new ServerMessage("Hello there!"))
-                const serverMessage2 = JSON.stringify(new ServerMessage("Cool guy!!"))
-
-                connection.send(serverMessage1)
-                connection.send(serverMessage2)
-
-                await waitFor(() => {
-                    const text = renderResult.getByTestId("receive-message").getAttribute("value")
-                    expect(text).toEqual("Hello there!<br/>Cool guy!!")
+                    expect(renderResult.queryByTestId("message-container")).toBeInTheDocument()
                 })
 
                 server.close()
                 done()
             })
 
-            const renderResult = await renderAndCreateSession()
-        })
+            const renderResult = await renderFunction()
+            expect(renderResult.queryByTestId("message-container")).not.toBeInTheDocument()
+        });
+    }
 
+    function assertSendingData(
+        spoofFunction: (arg: any) => Promise<void>,
+        renderFunction: () => Promise<RenderResult>
+    ) {
         it('sends messages to the server with the right data', async (done) => {
             createServer();
 
-            await spoofSuccessfulCreateSession(async (connection: WebSocket) => {
+            await spoofFunction(async (connection: WebSocket) => {
                 connection.on("message", (message: string) => {
                     const parsedEvent = JSON.parse(message) as SendMessageEvent
                     expect(parsedEvent.sessionId).toMatch(new RegExp(uuidRegex))
@@ -257,79 +202,39 @@ describe('App', () => {
                 }
             })
 
-            const renderResult = await renderAndCreateSession()
+            const renderResult = await renderFunction()
         });
-    })
+    }
 
-    describe("joining an existing session", () => {
-        it('sends the correct data to join a session', async (done) => {
-            createServer();
-
-            onServerMessage((message: string) => {
-                const parsedEvent = JSON.parse(message) as JoinSessionEvent
-                expect(parsedEvent.sessionId).toMatch("some-session-id")
-                expect(parsedEvent.type).toMatch("JOIN_SESSION")
-                expect(parsedEvent.userId).toMatch(new RegExp(uuidRegex))
-
-                expect(parsedEvent.userId).not.toEqual(parsedEvent.sessionId)
-                server.close()
-                done()
-            })
-
-            await renderAndJoinSession()
-        });
-
+    function assertDisplayingConnectedStatus(
+        spoofFunction: (args: any) => Promise<void>,
+        renderFunction: () => Promise<RenderResult>
+    ) {
         it('displays connected status when it works', async (done) => {
             createServer();
 
-            await spoofSuccessfulJoinSession(async () => {
+            await spoofFunction(async () => {
                 await waitFor(() => {
-                    const connectedMessageRegex = `Connected to session! some-session-id`
-                    expect(renderResult.getByText(new RegExp(connectedMessageRegex))).toBeInTheDocument()
+                    const connectedMessageRegex = new RegExp(`Connected to session! ${uuidRegex}`)
+                    expect(renderResult.getByTestId("session-status").textContent).toMatch(connectedMessageRegex)
                 })
 
                 server.close()
                 done()
             })
 
-            const renderResult = await renderAndJoinSession()
-        });
+            const renderResult = await renderFunction()
+        })
+    }
 
-        it('displays the message container after connecting to session', async (done) => {
-            createServer();
-
-            await spoofSuccessfulJoinSession(async () => {
-                await waitFor(() => {
-                    expect(renderResult.queryByTestId("message-container")).toBeInTheDocument()
-                })
-
-                server.close()
-                done()
-            })
-
-            const renderResult = await renderAndJoinSession()
-            expect(renderResult.queryByTestId("message-container")).not.toBeInTheDocument()
-        });
-
-        it("displays an error when it fails", async (done) => {
-            createServer();
-
-            await spoofFailureToJoinSession(async () => {
-                await waitFor(() => {
-                    expect(renderResult.getByText("Failed to join session :(")).toBeInTheDocument()
-                })
-
-                done()
-            })
-
-            const renderResult = await renderAndJoinSession()
-            expect(renderResult.queryByText("Failed to join session :(")).not.toBeInTheDocument()
-        });
-
+    function assertReceivingData(
+        spoofFunction: (arg: any) => Promise<void>,
+        renderFunction: () => Promise<RenderResult>
+    ) {
         it('receives the data from the server', async (done) => {
             createServer();
 
-            await spoofSuccessfulJoinSession(async (connection) => {
+            await spoofFunction(async (connection: WebSocket) => {
                 const serverMessage1 = JSON.stringify(new ServerMessage("Hello there!"))
                 const serverMessage2 = JSON.stringify(new ServerMessage("Cool guy!!"))
 
@@ -345,55 +250,96 @@ describe('App', () => {
                 done()
             })
 
-            const renderResult = await renderAndJoinSession()
-        });
+            const renderResult = await renderFunction()
+        })
+    }
 
-        it('sends messages to the server with the right data', async (done) => {
+    function assertShowingError(
+        spoofFunction: (arg: any) => Promise<void>,
+        renderFunction: () => Promise<RenderResult>,
+        join: boolean
+    ) {
+        it("displays an error when it fails", async (done) => {
             createServer();
 
-            await spoofSuccessfulJoinSession(async (connection: WebSocket) => {
-                connection.on("message", (message: string) => {
-                    const parsedEvent = JSON.parse(message) as SendMessageEvent
-                    expect(parsedEvent.sessionId).toMatch("some-session-id")
-                    expect(parsedEvent.type).toMatch("SEND_MESSAGE")
-                    expect(parsedEvent.userId).toMatch(new RegExp(uuidRegex))
-                    expect(parsedEvent.message).toEqual("Sup bro!")
-
-                    server.close()
-                    done()
-                })
-
+            await spoofFunction(async () => {
                 await waitFor(() => {
-                    expect(renderResult.queryByTestId("message-container")).toBeInTheDocument()
+                    if (join) {
+                        expect(renderResult.getByText("Failed to join session :(")).toBeInTheDocument()
+                    } else {
+                        expect(renderResult.getByText("Failed to create session :(")).toBeInTheDocument()
+                    }
                 })
 
-                // I'm sorry Joe :(
-                try {
-                    const sendMessageBox = renderResult.getByTestId("send-message")
-                    const sendButton = renderResult.getByText("Send")
-
-                    fireEvent.change(sendMessageBox, {target: {value: "Sup bro!"}})
-                    fireEvent.click(sendButton)
-                } catch {
-                }
+                done()
             })
 
-            const renderResult = await renderAndJoinSession()
+            const renderResult = await renderFunction()
+            expect(renderResult.queryByText("Failed to join session :(")).not.toBeInTheDocument()
+            expect(renderResult.queryByText("Failed to create session :(")).not.toBeInTheDocument()
         });
+    }
 
-        it('hides the session stuff after connecting', async (done) => {
+    describe("creating a session", () => {
+        it('sends correct data to create a session', async (done) => {
             createServer();
 
-            await spoofSuccessfulCreateSession(async () => {
-                await waitFor(() => {
-                    expect(renderResult.queryByTestId("session-container")).not.toBeInTheDocument()
-                })
+            onServerMessage((message: string) => {
+                const parsedEvent = JSON.parse(message) as CreateSessionEvent
+                expect(parsedEvent.sessionId).toMatch(new RegExp(uuidRegex))
+                expect(parsedEvent.type).toMatch("CREATE_SESSION")
+                expect(parsedEvent.userId).toMatch(new RegExp(uuidRegex))
+
+                expect(parsedEvent.userId).not.toEqual(parsedEvent.sessionId)
                 server.close()
                 done()
             })
 
-            const renderResult = await renderAndJoinSession()
-        })
+            await renderAndCreateSession()
+        });
+
+        assertShowingError(spoofFailureToCreateSession, renderAndCreateSession, false)
+
+        assertShowingMessageContainer(spoofSuccessfulCreateSession, renderAndCreateSession)
+
+        assertDisplayingConnectedStatus(spoofSuccessfulCreateSession, renderAndCreateSession)
+
+        assertItHidesTheSessionStuff(renderAndCreateSession)
+
+        assertSendingData(spoofSuccessfulCreateSession, renderAndCreateSession)
+
+        assertReceivingData(spoofSuccessfulCreateSession, renderAndCreateSession)
+    })
+
+    describe("joining an existing session", () => {
+        it('sends the correct data to join a session', async (done) => {
+            createServer();
+
+            onServerMessage((message: string) => {
+                const parsedEvent = JSON.parse(message) as JoinSessionEvent
+                expect(parsedEvent.sessionId).toMatch(new RegExp(uuidRegex))
+                expect(parsedEvent.type).toMatch("JOIN_SESSION")
+                expect(parsedEvent.userId).toMatch(new RegExp(uuidRegex))
+
+                expect(parsedEvent.userId).not.toEqual(parsedEvent.sessionId)
+                server.close()
+                done()
+            })
+
+            await renderAndJoinSession()
+        });
+
+        assertShowingError(spoofFailureToJoinSession, renderAndJoinSession, true)
+
+        assertShowingMessageContainer(spoofSuccessfulJoinSession, renderAndJoinSession)
+
+        assertDisplayingConnectedStatus(spoofSuccessfulJoinSession, renderAndJoinSession)
+
+        assertItHidesTheSessionStuff(renderAndJoinSession)
+
+        assertSendingData(spoofSuccessfulJoinSession, renderAndJoinSession)
+
+        assertReceivingData(spoofSuccessfulJoinSession, renderAndJoinSession)
     })
 
     it('says when its connected to the server', async () => {
