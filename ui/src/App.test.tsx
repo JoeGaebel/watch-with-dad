@@ -380,6 +380,20 @@ describe('App', () => {
 
             const renderResult = await renderAndJoinSession()
         });
+
+        it('hides the session stuff after connecting', async (done) => {
+            createServer();
+
+            await spoofSuccessfulCreateSession(async () => {
+                await waitFor(() => {
+                    expect(renderResult.queryByTestId("session-container")).not.toBeInTheDocument()
+                })
+                server.close()
+                done()
+            })
+
+            const renderResult = await renderAndJoinSession()
+        })
     })
 
     it('says when its connected to the server', async () => {
