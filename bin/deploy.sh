@@ -6,8 +6,8 @@ git remote add watch-with-dad-ui https://git.heroku.com/watch-with-dad-ui.git > 
 heroku buildpacks:add -a watch-with-dad-api https://github.com/lstoll/heroku-buildpack-monorepo -i 1 > /dev/null 2>&1 || echo 0 > /dev/null 2>&1
 heroku buildpacks:add -a watch-with-dad-ui https://github.com/lstoll/heroku-buildpack-monorepo -i 1 > /dev/null 2>&1 || echo 0 > /dev/null 2>&1
 
-heroku buildpacks:add -a watch-with-dad-ui mars/create-react-app -i 2 > /dev/null 2>&1 || echo 0 > /dev/null 2>&1
-heroku buildpacks:add -a watch-with-dad-api heroku/nodejs -i 2 > /dev/null 2>&1 || echo 0 > /dev/null 2>&1
+heroku buildpacks:add -a watch-with-dad-ui mars/create-react-app -i 2 > /dev/null 2>&1
+heroku buildpacks:add -a watch-with-dad-api heroku/nodejs -i 2 > /dev/null 2>&1
 
 heroku config:set --app watch-with-dad-ui APP_BASE="ui"
 heroku config:set --app watch-with-dad-api APP_BASE="api"
