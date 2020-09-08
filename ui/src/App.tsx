@@ -12,10 +12,9 @@ function App() {
     const [joinSessionIdInput, setJoinSessionIdInput] = useState("")
     const [joinSessionFailure, setJoinSessionFailure] = useState(false)
     const [createSessionFailure, setCreateSessionFailure] = useState(false)
-
     const [sessionId, setSessionId] = useState("")
-    const userId = useRef(v4())
 
+    const userId = useRef(v4())
     const connection = useRef(new WebSocket(BACKEND_URL))
 
     connection.current.onopen = () => {

@@ -1,7 +1,7 @@
 set -e
 
 killItByPort() {
-    kill $(lsof -t -i:$1) 2> /dev/null || echo 0 2> /dev/null
+    kill $(lsof -t -i:$1) > /dev/null 2>&1 || echo 0 > /dev/null 2>&1
 }
 
 function wait_for_port()
@@ -19,9 +19,9 @@ killItByPort 3000
 (cd ui && yarn install && yarn test)
 (cd api && yarn install && yarn test)
 
-(cd ui && yarn start | cat - &)
+(cd ui && yarn start | cat - &) > /dev/null 2>&1
 wait_for_port 3000
-(cd api && yarn startdev &)
+(cd api && yarn startdev &) > /dev/null 2>&1
 wait_for_port 9090
 (cd e2e && yarn install && yarn test)
 

@@ -13,6 +13,10 @@ const WebSocket = require("ws");
 describe('Server', () => {
     let server: Server
 
+    beforeAll(() => {
+        jest.spyOn(console, 'log').mockImplementation()
+    })
+
     afterEach(async () => {
         await server.close()
     })
