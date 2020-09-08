@@ -1,6 +1,8 @@
 import React, {useRef, useState} from 'react';
 import {v4} from "uuid"
 import {ClientSocketEvent, CreateSessionEvent, JoinSessionEvent, SendMessageEvent} from "./types/shared";
+// @ts-ignore
+import topgun from './topgun.mp4';
 
 function App() {
     const BACKEND_URL = process.env.REACT_APP_BACKEND_URL!
@@ -76,6 +78,14 @@ function App() {
 
     const messageValues = messages.join("<br/>")
 
+    function handlePlay() {
+        sendMessage("PLAY")
+    }
+
+    function handlePause() {
+        sendMessage("PAUSE")
+    }
+
     return (
         <>
             <div data-testid="status">{connectedToServer ? "Connected to server!" : "Connecting to server..."}</div>
@@ -102,6 +112,8 @@ function App() {
                 <button data-testid="button" onClick={() => sendMessage(sendMessageValue)}>Send</button>
                 <br/>
                 <input readOnly data-testid="receive-message" id="receive-message" value={messageValues}/>
+                <br/>
+                <video data-testid="video" src={topgun} controls onPlay={handlePlay} onPause={handlePause}/>
             </div>}
         </>
     );

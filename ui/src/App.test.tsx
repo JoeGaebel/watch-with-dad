@@ -2,18 +2,17 @@ import React from 'react';
 import {fireEvent, render, RenderResult, waitFor} from '@testing-library/react';
 import App from './App';
 import * as WebSocket from 'ws'
-import {act} from "react-dom/test-utils";
 import {
     CreatedSessionFailure,
     CreatedSessionSuccessfully,
     CreateSessionEvent,
     JoinedSessionFailure,
     JoinedSessionSuccessfully,
-    JoinSessionEvent,
     SendMessageEvent,
     ServerMessage
 } from "./types/shared";
 import {v4} from "uuid";
+import flushPromises from "flush-promises/index";
 
 
 describe('App', () => {
@@ -30,6 +29,8 @@ describe('App', () => {
         await new Promise((resolve, _) => {
             server.close(() => resolve())
         })
+
+        await flushPromises()
     })
 
     function createServer() {
@@ -80,9 +81,7 @@ describe('App', () => {
         server.on("connection", (connection: WebSocket) => {
             connection.on("message", async () => {
                 const joinedSuccessfully = JSON.stringify(new JoinedSessionSuccessfully())
-                act(() => {
-                    connection.send(joinedSuccessfully)
-                })
+                connection.send(joinedSuccessfully)
                 await then(connection)
             })
 
@@ -90,43 +89,35 @@ describe('App', () => {
     }
 
     async function spoofFailureToJoinSession(then: (connection: WebSocket) => Promise<void>) {
-        act(() => {
-            server.on("connection", (connection: WebSocket) => {
-                connection.on("message", async () => {
-                    const joinedSuccessfully = JSON.stringify(new JoinedSessionFailure())
+        server.on("connection", (connection: WebSocket) => {
+            connection.on("message", async () => {
+                const joinedSuccessfully = JSON.stringify(new JoinedSessionFailure())
 
-                    connection.send(joinedSuccessfully)
+                connection.send(joinedSuccessfully)
 
-                    await then(connection)
-                })
+                await then(connection)
             })
         })
     }
 
     async function spoofSuccessfulCreateSession(then: (connection: WebSocket) => Promise<void>) {
-        act(() => {
-            server.on("connection", (connection: WebSocket) => {
-                connection.on("message", async () => {
-                    const createdSessionSuccessfully = JSON.stringify(new CreatedSessionSuccessfully())
+        server.on("connection", (connection: WebSocket) => {
+            connection.on("message", async () => {
+                const createdSessionSuccessfully = JSON.stringify(new CreatedSessionSuccessfully())
+                connection.send(createdSessionSuccessfully)
 
-                    connection.send(createdSessionSuccessfully)
-
-                    await then(connection)
-                })
+                await then(connection)
             })
         })
     }
 
     async function spoofFailureToCreateSession(then: (connection: WebSocket) => Promise<void>) {
-        act(() => {
-            server.on("connection", (connection: WebSocket) => {
-                connection.on("message", async () => {
-                    const joinedSuccessfully = JSON.stringify(new CreatedSessionFailure())
+        server.on("connection", (connection: WebSocket) => {
+            connection.on("message", async () => {
+                const joinedSuccessfully = JSON.stringify(new CreatedSessionFailure())
+                connection.send(joinedSuccessfully)
 
-                    connection.send(joinedSuccessfully)
-
-                    await then(connection)
-                })
+                await then(connection)
             })
         })
     }
@@ -141,7 +132,6 @@ describe('App', () => {
                 await waitFor(() => {
                     expect(renderResult.queryByTestId("session-container")).not.toBeInTheDocument()
                 })
-                server.close()
                 done()
             })
 
@@ -161,7 +151,6 @@ describe('App', () => {
                     expect(renderResult.queryByTestId("message-container")).toBeInTheDocument()
                 })
 
-                server.close()
                 done()
             })
 
@@ -185,7 +174,6 @@ describe('App', () => {
                     expect(parsedEvent.userId).toMatch(new RegExp(uuidRegex))
                     expect(parsedEvent.message).toEqual("Sup bro!")
 
-                    server.close()
                     done()
                 })
 
@@ -193,15 +181,11 @@ describe('App', () => {
                     expect(renderResult.queryByTestId("message-container")).toBeInTheDocument()
                 })
 
-                // I'm sorry Joe :(
-                try {
-                    const sendMessageBox = renderResult.getByTestId("send-message")
-                    const sendButton = renderResult.getByText("Send")
+                const sendMessageBox = renderResult.getByTestId("send-message")
+                const sendButton = renderResult.getByText("Send")
 
-                    fireEvent.change(sendMessageBox, {target: {value: "Sup bro!"}})
-                    fireEvent.click(sendButton)
-                } catch {
-                }
+                fireEvent.change(sendMessageBox, {target: {value: "Sup bro!"}})
+                fireEvent.click(sendButton)
             })
 
             const renderResult = await renderFunction()
@@ -221,7 +205,6 @@ describe('App', () => {
                     expect(renderResult.getByTestId("session-status").textContent).toMatch(connectedMessageRegex)
                 })
 
-                server.close()
                 done()
             })
 
@@ -248,7 +231,6 @@ describe('App', () => {
                     expect(text).toEqual("Hello there!<br/>Cool guy!!")
                 })
 
-                server.close()
                 done()
             })
 
@@ -302,11 +284,70 @@ describe('App', () => {
                 expect(parsedEvent.userId).toMatch(new RegExp(uuidRegex))
 
                 expect(parsedEvent.userId).not.toEqual(parsedEvent.sessionId)
-                server.close()
                 done()
             })
 
             await renderFunction()
+        });
+    }
+
+    function assertSendingPlay(
+        spoofFunction: (arg: any) => Promise<void>,
+        renderFunction: () => Promise<RenderResult>
+    ) {
+        it('sends a PLAY message when the video is played', async (done) => {
+            createServer();
+
+            await spoofFunction(async (connection: WebSocket) => {
+                connection.on("message", (message: string) => {
+                    const parsedEvent = JSON.parse(message) as SendMessageEvent
+                    expect(parsedEvent.sessionId).toMatch(new RegExp(uuidRegex))
+                    expect(parsedEvent.type).toMatch("SEND_MESSAGE")
+                    expect(parsedEvent.userId).toMatch(new RegExp(uuidRegex))
+                    expect(parsedEvent.message).toEqual("PLAY")
+
+                    done()
+                })
+
+                await waitFor(() => {
+                    expect(renderResult.queryByTestId("message-container")).toBeInTheDocument()
+                })
+
+                const video = renderResult.getByTestId("video")
+                fireEvent.play(video)
+            })
+
+            const renderResult = await renderFunction()
+        });
+    }
+
+    function assertSendingPause(
+        spoofFunction: (arg: any) => Promise<void>,
+        renderFunction: () => Promise<RenderResult>
+    ) {
+        it('sends a PAUSE message when the video is paused', async (done) => {
+            createServer();
+
+            await spoofFunction(async (connection: WebSocket) => {
+                connection.on("message", (message: string) => {
+                    const parsedEvent = JSON.parse(message) as SendMessageEvent
+                    expect(parsedEvent.sessionId).toMatch(new RegExp(uuidRegex))
+                    expect(parsedEvent.type).toMatch("SEND_MESSAGE")
+                    expect(parsedEvent.userId).toMatch(new RegExp(uuidRegex))
+                    expect(parsedEvent.message).toEqual("PAUSE")
+
+                    done()
+                })
+
+                await waitFor(() => {
+                    expect(renderResult.queryByTestId("message-container")).toBeInTheDocument()
+                })
+
+                const video = renderResult.getByTestId("video")
+                fireEvent.pause(video)
+            })
+
+            const renderResult = await renderFunction()
         });
     }
 
@@ -324,6 +365,10 @@ describe('App', () => {
         assertSendingData(spoofSuccessfulCreateSession, renderAndCreateSession)
 
         assertReceivingData(spoofSuccessfulCreateSession, renderAndCreateSession)
+
+        assertSendingPlay(spoofSuccessfulCreateSession, renderAndCreateSession)
+
+        assertSendingPause(spoofSuccessfulCreateSession, renderAndCreateSession)
     })
 
     describe("joining an existing session", () => {
@@ -340,6 +385,10 @@ describe('App', () => {
         assertSendingData(spoofSuccessfulJoinSession, renderAndJoinSession)
 
         assertReceivingData(spoofSuccessfulJoinSession, renderAndJoinSession)
+
+        assertSendingPlay(spoofSuccessfulJoinSession, renderAndJoinSession)
+
+        assertSendingPause(spoofSuccessfulJoinSession, renderAndJoinSession)
     })
 
     it('says when its connected to the server', async () => {
