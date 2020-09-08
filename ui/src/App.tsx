@@ -122,7 +122,12 @@ function App() {
             </div>}
 
             {connectedToSession && <div data-testid="message-container">
-                <input type="file" data-testid="file-input" onChange={handleFile}/>
+                <input
+                    type="file"
+                    data-testid="file-input"
+                    onChange={handleFile}
+                    accept="video/mp4,video/x-m4v,video/*"
+                />
                 <br/>
                 <video
                     id="video"
