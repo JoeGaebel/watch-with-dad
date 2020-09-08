@@ -131,7 +131,9 @@ describe('App', () => {
         })
     }
 
-    function assertItHidesTheSessionStuff(renderFunction: () => Promise<RenderResult>) {
+    function assertItHidesTheSessionStuff(
+        renderFunction: () => Promise<RenderResult>
+    ) {
         it('hides the session stuff after connecting', async (done) => {
             createServer();
 
@@ -280,14 +282,23 @@ describe('App', () => {
         });
     }
 
-    describe("creating a session", () => {
-        it('sends correct data to create a session', async (done) => {
+    function assertOpeningSessionCorrectly(
+        join: boolean,
+        renderFunction: () => Promise<RenderResult>
+    ) {
+        it('sends correct data to open a session', async (done) => {
             createServer();
 
             onServerMessage((message: string) => {
                 const parsedEvent = JSON.parse(message) as CreateSessionEvent
                 expect(parsedEvent.sessionId).toMatch(new RegExp(uuidRegex))
-                expect(parsedEvent.type).toMatch("CREATE_SESSION")
+
+                if (join) {
+                    expect(parsedEvent.type).toMatch("JOIN_SESSION")
+                } else {
+                    expect(parsedEvent.type).toMatch("CREATE_SESSION")
+                }
+
                 expect(parsedEvent.userId).toMatch(new RegExp(uuidRegex))
 
                 expect(parsedEvent.userId).not.toEqual(parsedEvent.sessionId)
@@ -295,8 +306,12 @@ describe('App', () => {
                 done()
             })
 
-            await renderAndCreateSession()
+            await renderFunction()
         });
+    }
+
+    describe("creating a session", () => {
+        assertOpeningSessionCorrectly(false, renderAndCreateSession)
 
         assertShowingError(spoofFailureToCreateSession, renderAndCreateSession, false)
 
@@ -312,22 +327,7 @@ describe('App', () => {
     })
 
     describe("joining an existing session", () => {
-        it('sends the correct data to join a session', async (done) => {
-            createServer();
-
-            onServerMessage((message: string) => {
-                const parsedEvent = JSON.parse(message) as JoinSessionEvent
-                expect(parsedEvent.sessionId).toMatch(new RegExp(uuidRegex))
-                expect(parsedEvent.type).toMatch("JOIN_SESSION")
-                expect(parsedEvent.userId).toMatch(new RegExp(uuidRegex))
-
-                expect(parsedEvent.userId).not.toEqual(parsedEvent.sessionId)
-                server.close()
-                done()
-            })
-
-            await renderAndJoinSession()
-        });
+        assertOpeningSessionCorrectly(true, renderAndJoinSession)
 
         assertShowingError(spoofFailureToJoinSession, renderAndJoinSession, true)
 
