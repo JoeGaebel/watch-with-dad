@@ -9,7 +9,10 @@ heroku buildpacks:add -a watch-with-dad-ui mars/create-react-app -i 2 > /dev/nul
 
 # Need to also add APP_BASE=ui and APP_BASE=api to the environment variables in heroku
 
+
+
 ### UI
+heroku config:set --app watch-with-dad-ui REACT_APP_BACKEND_URL="ws://watch-with-dad-api.herokuapp.com/"
 git push watch-with-dad-ui master
 
 ## API
