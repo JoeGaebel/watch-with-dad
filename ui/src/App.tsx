@@ -17,7 +17,6 @@ function App() {
     const [connectedToServer, setConnectedToServer] = useState<boolean>(false)
     const [connectedToSession, setConnectedToSession] = useState<boolean>(false)
     const [messages, setMessages] = useState<Array<string>>([])
-    const [sendMessageValue, setSendMessage] = useState("")
     const [joinSessionIdInput, setJoinSessionIdInput] = useState("")
     const [joinSessionFailure, setJoinSessionFailure] = useState(false)
     const [createSessionFailure, setCreateSessionFailure] = useState(false)
@@ -93,8 +92,6 @@ function App() {
         const sendMessageEvent = new SendMessageEvent(message, sessionId, userId.current)
         sendMessageToSocket(sendMessageEvent)
     }
-
-    const messageValues = messages.join("<br/>")
 
     function handlePlay() {
         sendMessage("PLAY")

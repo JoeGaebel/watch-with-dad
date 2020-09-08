@@ -1,4 +1,4 @@
-import {ClientFunction, Selector} from 'testcafe'
+import {Selector} from 'testcafe'
 
 const frontendURL = process.env.FRONTEND_URL || 'http://localhost:3000'
 
