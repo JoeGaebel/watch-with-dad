@@ -18,10 +18,21 @@ import flushPromises from "flush-promises/index";
 describe('App', () => {
     const fakeBackendPort = 9999
     let server: WebSocket.Server
+    let playSpy: jest.SpyInstance
+    let pauseSpy: jest.SpyInstance
 
     const uuidRegex = "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
 
     beforeEach(() => {
+        jest.resetAllMocks()
+        playSpy = jest
+            .spyOn(window.HTMLMediaElement.prototype, 'play')
+            .mockImplementation()
+
+        pauseSpy = jest
+            .spyOn(window.HTMLMediaElement.prototype, 'pause')
+            .mockImplementation()
+
         process.env.REACT_APP_BACKEND_URL = `ws://localhost:${fakeBackendPort}`
     })
 
@@ -159,39 +170,6 @@ describe('App', () => {
         });
     }
 
-    function assertSendingData(
-        spoofFunction: (arg: any) => Promise<void>,
-        renderFunction: () => Promise<RenderResult>
-    ) {
-        it('sends messages to the server with the right data', async (done) => {
-            createServer();
-
-            await spoofFunction(async (connection: WebSocket) => {
-                connection.on("message", (message: string) => {
-                    const parsedEvent = JSON.parse(message) as SendMessageEvent
-                    expect(parsedEvent.sessionId).toMatch(new RegExp(uuidRegex))
-                    expect(parsedEvent.type).toMatch("SEND_MESSAGE")
-                    expect(parsedEvent.userId).toMatch(new RegExp(uuidRegex))
-                    expect(parsedEvent.message).toEqual("Sup bro!")
-
-                    done()
-                })
-
-                await waitFor(() => {
-                    expect(renderResult.queryByTestId("message-container")).toBeInTheDocument()
-                })
-
-                const sendMessageBox = renderResult.getByTestId("send-message")
-                const sendButton = renderResult.getByText("Send")
-
-                fireEvent.change(sendMessageBox, {target: {value: "Sup bro!"}})
-                fireEvent.click(sendButton)
-            })
-
-            const renderResult = await renderFunction()
-        });
-    }
-
     function assertDisplayingConnectedStatus(
         spoofFunction: (args: any) => Promise<void>,
         renderFunction: () => Promise<RenderResult>
@@ -203,32 +181,6 @@ describe('App', () => {
                 await waitFor(() => {
                     const connectedMessageRegex = new RegExp(`Connected to session! ${uuidRegex}`)
                     expect(renderResult.getByTestId("session-status").textContent).toMatch(connectedMessageRegex)
-                })
-
-                done()
-            })
-
-            const renderResult = await renderFunction()
-        })
-    }
-
-    function assertReceivingData(
-        spoofFunction: (arg: any) => Promise<void>,
-        renderFunction: () => Promise<RenderResult>
-    ) {
-        it('receives the data from the server', async (done) => {
-            createServer();
-
-            await spoofFunction(async (connection: WebSocket) => {
-                const serverMessage1 = JSON.stringify(new ServerMessage("Hello there!"))
-                const serverMessage2 = JSON.stringify(new ServerMessage("Cool guy!!"))
-
-                connection.send(serverMessage1)
-                connection.send(serverMessage2)
-
-                await waitFor(() => {
-                    const text = renderResult.getByTestId("receive-message").getAttribute("value")
-                    expect(text).toEqual("Hello there!<br/>Cool guy!!")
                 })
 
                 done()
@@ -322,7 +274,7 @@ describe('App', () => {
     }
 
     function assertSendingPause(
-        spoofFunction: (arg: any) => Promise<void>,
+        spoofFunction: (arg: (connection: WebSocket) => Promise<void>) => Promise<void>,
         renderFunction: () => Promise<RenderResult>
     ) {
         it('sends a PAUSE message when the video is paused', async (done) => {
@@ -351,6 +303,82 @@ describe('App', () => {
         });
     }
 
+    function assertReceivingPlay(
+        spoofFunction: (arg: any) => Promise<void>,
+        renderFunction: () => Promise<RenderResult>
+    ) {
+        it('plays the video and does not repeat a play message', async (done) => {
+            createServer();
+
+            await spoofFunction(async (connection: WebSocket) => {
+                let video: HTMLVideoElement | null = null;
+
+                connection.on("message", () => {
+                    fail("It sent a message :(")
+                })
+
+                await waitFor(() => {
+                    video = renderResult.queryByTestId("video") as HTMLVideoElement | null
+                    expect(video).toBeInTheDocument()
+                })
+
+                expect(playSpy).not.toHaveBeenCalled()
+                expect(pauseSpy).not.toHaveBeenCalled()
+
+                const serverMessage = JSON.stringify(new ServerMessage("PLAY"))
+                connection.send(serverMessage)
+
+                await waitFor(() => {
+                    expect(playSpy).toHaveBeenCalledTimes(1)
+                    expect(pauseSpy).not.toHaveBeenCalled()
+                })
+
+                done()
+            })
+
+            const renderResult = await renderFunction()
+        })
+    }
+
+    function assertReceivingPause(
+        spoofFunction: (arg: any) => Promise<void>,
+        renderFunction: () => Promise<RenderResult>
+    ) {
+        it('pauses the video and does not repeat a pause message', async (done) => {
+            createServer();
+
+            await spoofFunction(async (connection: WebSocket) => {
+                let video: HTMLVideoElement | null = null;
+
+                connection.on("message", () => {
+                    fail("It sent a message :(")
+                })
+
+                await waitFor(() => {
+                    video = renderResult.queryByTestId("video") as HTMLVideoElement | null
+                    expect(video).toBeInTheDocument()
+                })
+
+                expect(playSpy).not.toHaveBeenCalled()
+                expect(pauseSpy).not.toHaveBeenCalled()
+
+                const serverMessage = JSON.stringify(new ServerMessage("PAUSE"))
+                connection.send(serverMessage)
+
+                await waitFor(() => {
+                    expect(playSpy).not.toHaveBeenCalled()
+                    expect(pauseSpy).toHaveBeenCalledTimes(1)
+                })
+
+                done()
+            })
+
+            const renderResult = await renderFunction()
+
+            // Need to do the repeat part
+        })
+    }
+
     describe("creating a session", () => {
         assertOpeningSessionCorrectly(false, renderAndCreateSession)
 
@@ -362,13 +390,13 @@ describe('App', () => {
 
         assertItHidesTheSessionStuff(renderAndCreateSession)
 
-        assertSendingData(spoofSuccessfulCreateSession, renderAndCreateSession)
-
-        assertReceivingData(spoofSuccessfulCreateSession, renderAndCreateSession)
-
         assertSendingPlay(spoofSuccessfulCreateSession, renderAndCreateSession)
 
         assertSendingPause(spoofSuccessfulCreateSession, renderAndCreateSession)
+
+        assertReceivingPlay(spoofSuccessfulCreateSession, renderAndCreateSession)
+
+        assertReceivingPause(spoofSuccessfulCreateSession, renderAndCreateSession)
     })
 
     describe("joining an existing session", () => {
@@ -382,13 +410,13 @@ describe('App', () => {
 
         assertItHidesTheSessionStuff(renderAndJoinSession)
 
-        assertSendingData(spoofSuccessfulJoinSession, renderAndJoinSession)
-
-        assertReceivingData(spoofSuccessfulJoinSession, renderAndJoinSession)
-
         assertSendingPlay(spoofSuccessfulJoinSession, renderAndJoinSession)
 
         assertSendingPause(spoofSuccessfulJoinSession, renderAndJoinSession)
+
+        assertReceivingPlay(spoofSuccessfulJoinSession, renderAndJoinSession)
+
+        assertReceivingPause(spoofSuccessfulJoinSession, renderAndJoinSession)
     })
 
     it('says when its connected to the server', async () => {

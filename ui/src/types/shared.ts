@@ -1,4 +1,4 @@
-abstract class ServerSocketEvent {
+export abstract class ServerSocketEvent {
     type: string
 
     protected constructor(type: string) {

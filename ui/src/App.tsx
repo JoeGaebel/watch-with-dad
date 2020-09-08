@@ -1,6 +1,13 @@
 import React, {useRef, useState} from 'react';
 import {v4} from "uuid"
-import {ClientSocketEvent, CreateSessionEvent, JoinSessionEvent, SendMessageEvent} from "./types/shared";
+import {
+    ClientSocketEvent,
+    CreateSessionEvent,
+    JoinSessionEvent,
+    SendMessageEvent,
+    ServerMessage,
+    ServerSocketEvent
+} from "./types/shared";
 // @ts-ignore
 import topgun from './topgun.mp4';
 
@@ -16,6 +23,8 @@ function App() {
     const [createSessionFailure, setCreateSessionFailure] = useState(false)
     const [sessionId, setSessionId] = useState("")
 
+    const videoRef = useRef<HTMLVideoElement>(null)
+
     const userId = useRef(v4())
     const connection = useRef(new WebSocket(BACKEND_URL))
 
@@ -25,8 +34,8 @@ function App() {
 
     connection.current.onmessage = (event: MessageEvent) => {
         try {
-            const parsed = JSON.parse(event.data)
-            switch (parsed.type) {
+            const parsedEvent = JSON.parse(event.data) as ServerSocketEvent
+            switch (parsedEvent.type) {
                 case "JOINED_SESSION_SUCCESSFULLY": {
                     setConnectedToSession(true)
                     setSessionId(joinSessionIdInput)
@@ -37,7 +46,9 @@ function App() {
                     break
                 }
                 case "SERVER_MESSAGE": {
-                    setMessages(messages.concat(parsed.message))
+                    const serverMessage = parsedEvent as ServerMessage
+                    handleReceivedMessage(serverMessage.message)
+                    setMessages(messages.concat(serverMessage.message))
                     break
                 }
                 case "JOIN_SESSION_FAILURE": {
@@ -50,6 +61,13 @@ function App() {
                 }
             }
         } catch {
+        }
+    }
+
+    function handleReceivedMessage(message: string) {
+        switch (message) {
+            case "PLAY": videoRef?.current?.play(); break
+            case "PAUSE": videoRef?.current?.pause(); break
         }
     }
 
@@ -102,18 +120,15 @@ function App() {
             </div>}
 
             {connectedToSession && <div data-testid="message-container">
-                <input
-                    data-testid="send-message"
-                    id="send-message"
-                    value={sendMessageValue}
-                    onChange={({target: {value}}) => setSendMessage(value)}
+                <video
+                    id="video"
+                    data-testid="video"
+                    ref={videoRef}
+                    src={topgun}
+                    controls
+                    onPlay={handlePlay}
+                    onPause={handlePause}
                 />
-                <br/>
-                <button data-testid="button" onClick={() => sendMessage(sendMessageValue)}>Send</button>
-                <br/>
-                <input readOnly data-testid="receive-message" id="receive-message" value={messageValues}/>
-                <br/>
-                <video data-testid="video" src={topgun} controls onPlay={handlePlay} onPause={handlePause}/>
             </div>}
         </>
     );
