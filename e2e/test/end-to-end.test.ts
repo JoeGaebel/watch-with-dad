@@ -1,6 +1,8 @@
 import {Selector} from 'testcafe'
+import * as path from "path"
 
 const frontendURL = process.env.FRONTEND_URL || 'http://localhost:3000'
+const topgun = path.resolve("../topgun.mp4")
 
 fixture `Watch With Dad`
     .page(frontendURL);
@@ -31,6 +33,8 @@ test('plays and pauses in sync', async (t: TestController) => {
       .withText(/Connected to session!/)
       .innerText).match(uuidRegex)![0]
 
+  await t.setFilesToUpload("input", topgun)
+
   const isInitialVideoPaused = await getVideoPaused(t)
   await t.expect(isInitialVideoPaused).eql(true)
 
@@ -38,6 +42,8 @@ test('plays and pauses in sync', async (t: TestController) => {
 
   await t.typeText("[data-testid='session-id']", sessionId)
   await t.click(Selector("button").withText("Join Session"))
+
+  await t.setFilesToUpload("input", topgun)
 
   await playVideo(t)
   const isSecondaryVideoPaused = await getVideoPaused(t)

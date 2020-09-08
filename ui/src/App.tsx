@@ -1,4 +1,4 @@
-import React, {useRef, useState} from 'react';
+import React, {ChangeEvent, useRef, useState} from 'react';
 import {v4} from "uuid"
 import {
     ClientSocketEvent,
@@ -8,8 +8,6 @@ import {
     ServerMessage,
     ServerSocketEvent
 } from "./types/shared";
-// @ts-ignore
-import topgun from './topgun.mp4';
 
 function App() {
     const BACKEND_URL = process.env.REACT_APP_BACKEND_URL!
@@ -101,6 +99,13 @@ function App() {
         sendMessage("PAUSE")
     }
 
+    function handleFile(event: ChangeEvent<HTMLInputElement>) {
+        const file = event.target.files?.[0]
+        if (file && videoRef.current) {
+            videoRef.current.src = URL.createObjectURL(file)
+        }
+    }
+
     return (
         <>
             <div data-testid="status">{connectedToServer ? "Connected to server!" : "Connecting to server..."}</div>
@@ -117,11 +122,12 @@ function App() {
             </div>}
 
             {connectedToSession && <div data-testid="message-container">
+                <input type="file" data-testid="file-input" onChange={handleFile}/>
+                <br/>
                 <video
                     id="video"
                     data-testid="video"
                     ref={videoRef}
-                    src={topgun}
                     controls
                     onPlay={handlePlay}
                     onPause={handlePause}

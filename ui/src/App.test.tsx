@@ -1,5 +1,5 @@
 import React from 'react';
-import {fireEvent, render, RenderResult, waitFor} from '@testing-library/react';
+import {act, fireEvent, render, RenderResult, waitFor} from '@testing-library/react';
 import App from './App';
 import * as WebSocket from 'ws'
 import {
@@ -13,6 +13,8 @@ import {
 } from "./types/shared";
 import {v4} from "uuid";
 import flushPromises from "flush-promises/index";
+// @ts-ignore
+import topgun from '../../topgun.mp4'
 
 
 describe('App', () => {
@@ -20,6 +22,7 @@ describe('App', () => {
     let server: WebSocket.Server
     let playSpy: jest.SpyInstance
     let pauseSpy: jest.SpyInstance
+    let createObjectURLSpy: jest.SpyInstance
 
     const uuidRegex = "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
 
@@ -32,6 +35,13 @@ describe('App', () => {
         pauseSpy = jest
             .spyOn(window.HTMLMediaElement.prototype, 'pause')
             .mockImplementation()
+
+        createObjectURLSpy = jest
+            .fn()
+            .mockImplementation(() => "hey-look-its-a-fake-url")
+
+        // @ts-ignore
+        window.URL = {createObjectURL: createObjectURLSpy}
 
         process.env.REACT_APP_BACKEND_URL = `ws://localhost:${fakeBackendPort}`
     })
@@ -374,8 +384,42 @@ describe('App', () => {
             })
 
             const renderResult = await renderFunction()
+        })
+    }
 
-            // Need to do the repeat part
+    function assertRenderingLocalVideo(
+        spoofFunction: (arg: any) => Promise<void>,
+        renderFunction: () => Promise<RenderResult>
+    ) {
+        it('renders the video the user selects', async (done) => {
+            createServer();
+
+            await spoofFunction(async () => {
+                let video: HTMLVideoElement
+
+                await waitFor(() => {
+                    video = renderResult.getByTestId("video") as HTMLVideoElement
+                    expect(video).toBeInTheDocument()
+                })
+
+                expect(video!.src).toEqual("")
+
+                const fileInput = renderResult.getByTestId("file-input")
+
+                act(() => {
+                    fireEvent.change(fileInput, {
+                        target: {
+                            files: [topgun]
+                        }
+                    })
+                })
+
+                expect(video!.src).toEqual("http://localhost/hey-look-its-a-fake-url")
+
+                done()
+            })
+
+            const renderResult = await renderFunction()
         })
     }
 
@@ -397,6 +441,8 @@ describe('App', () => {
         assertReceivingPlay(spoofSuccessfulCreateSession, renderAndCreateSession)
 
         assertReceivingPause(spoofSuccessfulCreateSession, renderAndCreateSession)
+
+        assertRenderingLocalVideo(spoofSuccessfulCreateSession, renderAndCreateSession)
     })
 
     describe("joining an existing session", () => {
@@ -417,6 +463,8 @@ describe('App', () => {
         assertReceivingPlay(spoofSuccessfulJoinSession, renderAndJoinSession)
 
         assertReceivingPause(spoofSuccessfulJoinSession, renderAndJoinSession)
+
+        assertRenderingLocalVideo(spoofSuccessfulJoinSession, renderAndJoinSession)
     })
 
     it('says when its connected to the server', async () => {
