@@ -130,10 +130,17 @@ function App() {
                 />
                 <br/>
                 <video
+                    style={{
+                        userSelect: "none",
+                        border: 0,
+                        outline: 0,
+                    }}
                     id="video"
                     data-testid="video"
                     ref={videoRef}
                     controls
+                    width={400}
+                    height={200}
                     onPlay={handlePlay}
                     onPause={handlePause}
                 />
