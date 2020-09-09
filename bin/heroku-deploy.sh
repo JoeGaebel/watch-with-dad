@@ -18,6 +18,3 @@ git push watch-with-dad-ui master
 
 ## API
 git push watch-with-dad-api master
-
-
-

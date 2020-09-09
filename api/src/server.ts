@@ -12,16 +12,15 @@ import {
 } from "../../ui/src/types/shared";
 import {CloseEvent} from "ws";
 
+const port = parseInt(process.env.VCAP_APP_PORT || "9090");
 
 export default class Server {
     private socketServer?: WebSocket.Server
     sessions: Map<string, Map<string, WebSocket>> = new Map()
 
-    private port = 9090
-
     start() {
-        this.socketServer = new WebSocket.Server({port: this.port})
-        console.log(`Started server on ${this.port}`)
+        this.socketServer = new WebSocket.Server({port})
+        console.log(`Started server on ${port}`)
 
         this.socketServer.on("connection", (connection: WebSocket) => {
             connection.onmessage = (event: WebSocket.MessageEvent) => {

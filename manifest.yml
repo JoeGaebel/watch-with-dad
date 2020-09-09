@@ -1,0 +1,18 @@
+applications:
+  - name: watch-with-dad-ui
+    path: ui/build
+    buildpacks:
+      - staticfile_buildpack
+    instances: 1
+    memory: 2G
+    routes:
+      - route: watch-with-dad.cfapps.io
+  - name: watch-with-dad-api
+    path: api
+    health-check-type: process
+    instances: 1
+    memory: 2G
+    buildpacks:
+      - nodejs_buildpack
+    routes:
+      - route: watch-with-dad-api.cfapps.io

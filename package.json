@@ -1,9 +1,0 @@
-{
-  "dependencies": {
-    "@types/uuid": "8.3.0",
-    "uuid": "8.3.0"
-  },
-  "devDependencies": {
-    "flush-promises": "1.0.2"
-  }
-}

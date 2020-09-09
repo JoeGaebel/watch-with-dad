@@ -12,7 +12,7 @@ import {
     ServerMessage
 } from "./types/shared";
 import {v4} from "uuid";
-import flushPromises from "flush-promises/index";
+import flushPromises from "flush-promises";
 // @ts-ignore
 import topgun from '../../topgun.mp4'
 
