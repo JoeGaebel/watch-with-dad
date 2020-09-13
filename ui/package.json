@@ -38,6 +38,7 @@
     ]
   },
   "devDependencies": {
+    "@sheerun/mutationobserver-shim": "0.3.3",
     "@types/ws": "7.2.6",
     "flush-promises": "1.0.2",
     "jest-environment-jsdom-sixteen": "1.0.3",

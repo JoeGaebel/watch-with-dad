@@ -1,13 +1,13 @@
-import React, {ChangeEvent, useRef, useState} from 'react';
+import React, {useRef, useState} from 'react';
 import {v4} from "uuid"
 import {
     ClientSocketEvent,
     CreateSessionEvent,
     JoinSessionEvent,
-    SendMessageEvent,
     ServerMessage,
     ServerSocketEvent
 } from "./types/shared";
+import {VideoPlayer} from "./VideoPlayer";
 
 function App() {
     const BACKEND_URL = process.env.REACT_APP_BACKEND_URL!
@@ -86,25 +86,7 @@ function App() {
         sendMessageToSocket(joinSessionEvent)
     }
 
-    function sendMessage(message: string) {
-        const sendMessageEvent = new SendMessageEvent(message, sessionId, userId.current)
-        sendMessageToSocket(sendMessageEvent)
-    }
-
-    function handlePlay() {
-        sendMessage("PLAY")
-    }
-
-    function handlePause() {
-        sendMessage("PAUSE")
-    }
-
-    function handleFile(event: ChangeEvent<HTMLInputElement>) {
-        const file = event.target.files?.[0]
-        if (file && videoRef.current) {
-            videoRef.current.src = URL.createObjectURL(file)
-        }
-    }
+    const videoPlayerProps = {userId, sessionId, sendMessageToSocket, videoRef}
 
     return (
         <>
@@ -121,30 +103,7 @@ function App() {
                 </div>
             </div>}
 
-            {connectedToSession && <div data-testid="message-container">
-                <input
-                    type="file"
-                    data-testid="file-input"
-                    onChange={handleFile}
-                    accept="video/mp4,video/x-m4v,video/*"
-                />
-                <br/>
-                <video
-                    style={{
-                        userSelect: "none",
-                        border: 0,
-                        outline: 0,
-                    }}
-                    id="video"
-                    data-testid="video"
-                    ref={videoRef}
-                    controls
-                    width={400}
-                    height={200}
-                    onPlay={handlePlay}
-                    onPause={handlePause}
-                />
-            </div>}
+            {connectedToSession && <VideoPlayer {...videoPlayerProps}/>}
         </>
     );
 }
