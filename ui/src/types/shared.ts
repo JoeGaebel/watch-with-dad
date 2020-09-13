@@ -81,3 +81,12 @@ export class SendMessageEvent extends ClientSocketEvent {
         this.message = message
     }
 }
+
+export interface AppState {
+    connectedToServer: boolean,
+    connectedToSession: boolean,
+    joinSessionFailure: boolean,
+    createSessionFailure: boolean,
+    sessionId: string,
+    userId: string
+}

@@ -16,8 +16,8 @@ function wait_for_port()
 killItByPort 9090
 killItByPort 3000
 
-(cd ui && yarn install && yarn test)
-(cd api && yarn install && yarn test)
+(cd ui && yarn build && yarn install && yarn test)
+(cd api && yarn build && yarn install && yarn test)
 
 (cd ui && yarn start | cat - &) > /dev/null 2>&1
 wait_for_port 3000

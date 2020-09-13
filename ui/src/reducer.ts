@@ -1,6 +1,21 @@
 import {MutableRefObject} from "react";
-import {CreatedSessionSuccessfully, JoinedSessionSuccessfully, ServerMessage, ServerSocketEvent} from "./types/shared";
-import {AppState} from "./App";
+import {
+    AppState,
+    CreatedSessionSuccessfully,
+    JoinedSessionSuccessfully,
+    ServerMessage,
+    ServerSocketEvent
+} from "./types/shared";
+import {v4} from "uuid";
+
+export const initialState: AppState = {
+    connectedToServer: false,
+    connectedToSession: false,
+    joinSessionFailure: false,
+    createSessionFailure: false,
+    sessionId: '',
+    userId: v4()
+}
 
 export function getReducer(videoRef: MutableRefObject<HTMLVideoElement | null>):
     (state: AppState, event: ServerSocketEvent) => AppState {

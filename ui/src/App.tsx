@@ -1,36 +1,18 @@
 import React, {useReducer, useRef, useState} from 'react';
-import {v4} from "uuid"
-import {ClientSocketEvent, CreateSessionEvent, JoinSessionEvent} from "./types/shared";
 import VideoPlayer, {VideoPlayerProps} from "./VideoPlayer";
-import {getReducer} from "./reducer";
+import {getReducer, initialState} from "./reducer";
 import useWebSocket from "./hooks/useWebSocket";
-
-export interface AppState {
-    connectedToServer: boolean,
-    connectedToSession: boolean,
-    joinSessionFailure: boolean,
-    createSessionFailure: boolean,
-    sessionId: string,
-    userId: string
-}
-
-const initialState: AppState = {
-    connectedToServer: false,
-    connectedToSession: false,
-    joinSessionFailure: false,
-    createSessionFailure: false,
-    sessionId: '',
-    userId: v4()
-}
+import SocketMessager from "./SocketMessager";
 
 function App() {
     const BACKEND_URL = process.env.REACT_APP_BACKEND_URL!
 
     const connection = useRef(new WebSocket(BACKEND_URL))
     const videoRef = useRef<HTMLVideoElement>(null)
-    const reducer = getReducer(videoRef)
-
+    const socketMessager = useRef(new SocketMessager(connection))
     const [joinSessionIdInput, setJoinSessionIdInput] = useState('')
+
+    const reducer = getReducer(videoRef)
 
     const [{
         connectedToServer,
@@ -43,23 +25,7 @@ function App() {
 
     useWebSocket(connection, dispatch)
 
-    function sendMessageToSocket(event: ClientSocketEvent) {
-        const stringEvent = JSON.stringify(event)
-        connection.current.send(stringEvent)
-    }
-
-    function createSession() {
-        const newSessionId = v4()
-        const createSessionEvent = new CreateSessionEvent(newSessionId, userId)
-        sendMessageToSocket(createSessionEvent)
-    }
-
-    function joinSession(sessionId: string) {
-        const joinSessionEvent = new JoinSessionEvent(sessionId, userId)
-        sendMessageToSocket(joinSessionEvent)
-    }
-
-    const videoPlayerProps: VideoPlayerProps = {userId, sessionId, sendMessageToSocket, videoRef}
+    const videoPlayerProps: VideoPlayerProps = {userId, sessionId, socketMessager, videoRef}
 
     return (
         <>
@@ -70,9 +36,9 @@ function App() {
             {createSessionFailure && <div>Failed to create session :(</div>}
 
             {connectedToServer && !connectedToSession && <div data-testid="session-container">
-                <button onClick={createSession}>Create Session</button>
+                <button onClick={() => socketMessager.current.createSession(userId)}>Create Session</button>
                 <div>
-                    <button onClick={() => joinSession(joinSessionIdInput)}>Join Session</button>
+                    <button onClick={() => socketMessager.current.joinSession(joinSessionIdInput, userId)}>Join Session</button>
                     <input onChange={({target: {value}}) => setJoinSessionIdInput(value)} data-testid="session-id"/>
                 </div>
             </div>}

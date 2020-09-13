@@ -1,34 +1,21 @@
 import React, {ChangeEvent, MutableRefObject} from "react";
-import {ClientSocketEvent, SendMessageEvent} from "./types/shared";
+import SocketMessager from "./SocketMessager";
 
 export interface VideoPlayerProps {
-    sendMessageToSocket: (event: ClientSocketEvent) => void,
+    socketMessager: MutableRefObject<SocketMessager>,
     videoRef:  MutableRefObject<HTMLVideoElement | null>
     sessionId: string,
     userId: string
 }
 
 export default function VideoPlayer(props: VideoPlayerProps): JSX.Element {
-    const {videoRef, sessionId, userId, sendMessageToSocket} = props
+    const {videoRef, sessionId, userId, socketMessager} = props
 
     function handleFile(event: ChangeEvent<HTMLInputElement>) {
         const file = event.target.files?.[0]
         if (file && videoRef.current) {
             videoRef.current.src = URL.createObjectURL(file)
         }
-    }
-
-    function handlePlay() {
-        sendMessage("PLAY")
-    }
-
-    function handlePause() {
-        sendMessage("PAUSE")
-    }
-
-    function sendMessage(message: string) {
-        const sendMessageEvent = new SendMessageEvent(message, sessionId, userId)
-        sendMessageToSocket(sendMessageEvent)
     }
 
     return <div data-testid="message-container">
@@ -51,8 +38,8 @@ export default function VideoPlayer(props: VideoPlayerProps): JSX.Element {
             controls
             width={400}
             height={200}
-            onPlay={handlePlay}
-            onPause={handlePause}
+            onPlay={() => socketMessager.current.sendPlay(sessionId, userId)}
+            onPause={() => socketMessager.current.sendPause(sessionId, userId)}
         />
     </div>
 }
