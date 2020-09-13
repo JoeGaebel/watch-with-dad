@@ -1,15 +1,11 @@
-import React, {MutableRefObject, useReducer, useRef, useState} from 'react';
+import React, {useReducer, useRef, useState} from 'react';
 import {v4} from "uuid"
-import {
-    ClientSocketEvent, ConnectedToServerSuccessfully, CreatedSessionSuccessfully,
-    CreateSessionEvent, JoinedSessionSuccessfully,
-    JoinSessionEvent,
-    ServerMessage,
-    ServerSocketEvent
-} from "./types/shared";
-import {VideoPlayer} from "./VideoPlayer";
+import {ClientSocketEvent, CreateSessionEvent, JoinSessionEvent} from "./types/shared";
+import VideoPlayer, {VideoPlayerProps} from "./VideoPlayer";
+import {getReducer} from "./reducer";
+import useWebSocket from "./hooks/useWebSocket";
 
-interface AppState {
+export interface AppState {
     connectedToServer: boolean,
     connectedToSession: boolean,
     joinSessionFailure: boolean,
@@ -27,55 +23,14 @@ const initialState: AppState = {
     userId: v4()
 }
 
-function handleReceivedMessage(message: string, videoRef: MutableRefObject<HTMLVideoElement | null>) {
-    switch (message) {
-        case "PLAY":
-            videoRef?.current?.play();
-            break
-        case "PAUSE":
-            videoRef?.current?.pause();
-            break
-    }
-}
-
-function getReducer(videoRef: MutableRefObject<HTMLVideoElement | null>):
-    (state: AppState, event: ServerSocketEvent) => AppState {
-    return (state: AppState, action: ServerSocketEvent): AppState => {
-        switch (action.type) {
-            case "CONNECTED_TO_SERVER_SUCCESSFULLY": {
-                return {...state, connectedToServer: true}
-            }
-            case "JOINED_SESSION_SUCCESSFULLY": {
-                const joinedSessionEvent = action as JoinedSessionSuccessfully
-                return {...state, connectedToSession: true, sessionId: joinedSessionEvent.sessionId}
-            }
-            case "CREATED_SESSION_SUCCESSFULLY": {
-                const createdSessionEvent = action as CreatedSessionSuccessfully
-                return {...state, connectedToSession: true, sessionId: createdSessionEvent.sessionId}
-            }
-            case "SERVER_MESSAGE": {
-                const serverMessage = action as ServerMessage
-                handleReceivedMessage(serverMessage.message, videoRef)
-                return state
-            }
-            case "JOIN_SESSION_FAILURE": {
-                return {...state, joinSessionFailure: true}
-            }
-            case "CREATE_SESSION_FAILURE": {
-                return {...state, createSessionFailure: true}
-            }
-        }
-
-        return state;
-    }
-}
-
 function App() {
     const BACKEND_URL = process.env.REACT_APP_BACKEND_URL!
+
     const connection = useRef(new WebSocket(BACKEND_URL))
     const videoRef = useRef<HTMLVideoElement>(null)
-    const [joinSessionIdInput, setJoinSessionIdInput] = useState('')
     const reducer = getReducer(videoRef)
+
+    const [joinSessionIdInput, setJoinSessionIdInput] = useState('')
 
     const [{
         connectedToServer,
@@ -86,18 +41,7 @@ function App() {
         userId
     }, dispatch] = useReducer(reducer, initialState);
 
-    connection.current.onopen = () => {
-        const event = new ConnectedToServerSuccessfully()
-        dispatch(event)
-    }
-
-    connection.current.onmessage = (event: MessageEvent) => {
-        try {
-            const parsedEvent = JSON.parse(event.data) as ServerSocketEvent
-            dispatch(parsedEvent)
-        } catch (error) {
-        }
-    }
+    useWebSocket(connection, dispatch)
 
     function sendMessageToSocket(event: ClientSocketEvent) {
         const stringEvent = JSON.stringify(event)
@@ -115,7 +59,7 @@ function App() {
         sendMessageToSocket(joinSessionEvent)
     }
 
-    const videoPlayerProps = {userId, sessionId, sendMessageToSocket, videoRef}
+    const videoPlayerProps: VideoPlayerProps = {userId, sessionId, sendMessageToSocket, videoRef}
 
     return (
         <>

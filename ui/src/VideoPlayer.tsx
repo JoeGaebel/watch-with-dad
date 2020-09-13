@@ -8,7 +8,7 @@ export interface VideoPlayerProps {
     userId: string
 }
 
-export function VideoPlayer(props: VideoPlayerProps): JSX.Element {
+export default function VideoPlayer(props: VideoPlayerProps): JSX.Element {
     const {videoRef, sessionId, userId, sendMessageToSocket} = props
 
     function handleFile(event: ChangeEvent<HTMLInputElement>) {
