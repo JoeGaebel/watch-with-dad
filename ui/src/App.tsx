@@ -1,6 +1,6 @@
-import React, {useReducer, useRef, useState} from 'react';
+import React, {useRef, useState} from 'react';
 import VideoPlayer, {VideoPlayerProps} from "./VideoPlayer";
-import {getReducer, initialState} from "./reducer";
+import useSocketReducer from "./reducer";
 import useWebSocket from "./hooks/useWebSocket";
 import SocketMessager from "./SocketMessager";
 
@@ -12,8 +12,6 @@ function App() {
     const socketMessager = useRef(new SocketMessager(connection))
     const [joinSessionIdInput, setJoinSessionIdInput] = useState('')
 
-    const reducer = getReducer(videoRef)
-
     const [{
         connectedToServer,
         connectedToSession,
@@ -21,7 +19,7 @@ function App() {
         createSessionFailure,
         sessionId,
         userId
-    }, dispatch] = useReducer(reducer, initialState);
+    }, dispatch] = useSocketReducer(videoRef)
 
     useWebSocket(connection, dispatch)
 
@@ -29,14 +27,19 @@ function App() {
 
     return (
         <>
-            <div data-testid="status">{connectedToServer ? "Connected to server!" : "Connecting to server..."}</div>
-            <div
-                data-testid="session-status">{connectedToSession ? `Connected to session! ${sessionId}` : "Not connected to session..."}</div>
+            <div data-testid="status">
+                {connectedToServer ? "Connected to server!" : "Connecting to server..."}
+            </div>
+            <div data-testid="session-status">
+                {connectedToSession ? `Connected to session! ${sessionId}` : "Not connected to session..."}
+            </div>
+
             {joinSessionFailure && <div>Failed to join session :(</div>}
             {createSessionFailure && <div>Failed to create session :(</div>}
 
             {connectedToServer && !connectedToSession && <div data-testid="session-container">
                 <button onClick={() => socketMessager.current.createSession(userId)}>Create Session</button>
+
                 <div>
                     <button onClick={() => socketMessager.current.joinSession(joinSessionIdInput, userId)}>Join Session</button>
                     <input onChange={({target: {value}}) => setJoinSessionIdInput(value)} data-testid="session-id"/>

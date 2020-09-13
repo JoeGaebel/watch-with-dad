@@ -22,5 +22,5 @@ export default function useWebSocket(connection: MutableRefObject<WebSocket>, di
     useEffect(() => {
         subscribeToSocketOpening();
         subscribeToSocketMessage();
-    }, [])
+    })
 }

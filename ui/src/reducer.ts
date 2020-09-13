@@ -1,4 +1,4 @@
-import {MutableRefObject} from "react";
+import {MutableRefObject, useReducer} from "react";
 import {
     AppState,
     CreatedSessionSuccessfully,
@@ -17,7 +17,7 @@ export const initialState: AppState = {
     userId: v4()
 }
 
-export function getReducer(videoRef: MutableRefObject<HTMLVideoElement | null>):
+function getReducer(videoRef: MutableRefObject<HTMLVideoElement | null>):
     (state: AppState, event: ServerSocketEvent) => AppState {
     return (state: AppState, action: ServerSocketEvent): AppState => {
         switch (action.type) {
@@ -49,7 +49,6 @@ export function getReducer(videoRef: MutableRefObject<HTMLVideoElement | null>):
     }
 }
 
-
 function handleReceivedMessage(message: string, videoRef: MutableRefObject<HTMLVideoElement | null>) {
     switch (message) {
         case "PLAY":
@@ -59,4 +58,8 @@ function handleReceivedMessage(message: string, videoRef: MutableRefObject<HTMLV
             videoRef?.current?.pause();
             break
     }
+}
+
+export default function useSocketReducer(videoRef: MutableRefObject<HTMLVideoElement | null>) {
+    return useReducer(getReducer(videoRef), initialState);
 }
