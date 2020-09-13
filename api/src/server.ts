@@ -68,7 +68,7 @@ export default class Server {
         users.set(event.userId, connection)
         this.sessions.set(event.sessionId, users)
 
-        const connectionSuccessful = JSON.stringify(new CreatedSessionSuccessfully())
+        const connectionSuccessful = JSON.stringify(new CreatedSessionSuccessfully(event.sessionId))
         connection.send(connectionSuccessful)
     }
 
@@ -86,7 +86,7 @@ export default class Server {
 
         session.set(event.userId, connection)
 
-        const connectionSuccessful = JSON.stringify(new JoinedSessionSuccessfully())
+        const connectionSuccessful = JSON.stringify(new JoinedSessionSuccessfully(event.sessionId))
         connection.send(connectionSuccessful)
     }
 

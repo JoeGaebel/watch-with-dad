@@ -1,70 +1,101 @@
-import React, {useRef, useState} from 'react';
+import React, {MutableRefObject, useReducer, useRef, useState} from 'react';
 import {v4} from "uuid"
 import {
-    ClientSocketEvent,
-    CreateSessionEvent,
+    ClientSocketEvent, ConnectedToServerSuccessfully, CreatedSessionSuccessfully,
+    CreateSessionEvent, JoinedSessionSuccessfully,
     JoinSessionEvent,
     ServerMessage,
     ServerSocketEvent
 } from "./types/shared";
 import {VideoPlayer} from "./VideoPlayer";
 
+interface AppState {
+    connectedToServer: boolean,
+    connectedToSession: boolean,
+    joinSessionFailure: boolean,
+    createSessionFailure: boolean,
+    sessionId: string,
+    userId: string
+}
+
+const initialState: AppState = {
+    connectedToServer: false,
+    connectedToSession: false,
+    joinSessionFailure: false,
+    createSessionFailure: false,
+    sessionId: '',
+    userId: v4()
+}
+
+function handleReceivedMessage(message: string, videoRef: MutableRefObject<HTMLVideoElement | null>) {
+    switch (message) {
+        case "PLAY":
+            videoRef?.current?.play();
+            break
+        case "PAUSE":
+            videoRef?.current?.pause();
+            break
+    }
+}
+
+function getReducer(videoRef: MutableRefObject<HTMLVideoElement | null>):
+    (state: AppState, event: ServerSocketEvent) => AppState {
+    return (state: AppState, action: ServerSocketEvent): AppState => {
+        switch (action.type) {
+            case "CONNECTED_TO_SERVER_SUCCESSFULLY": {
+                return {...state, connectedToServer: true}
+            }
+            case "JOINED_SESSION_SUCCESSFULLY": {
+                const joinedSessionEvent = action as JoinedSessionSuccessfully
+                return {...state, connectedToSession: true, sessionId: joinedSessionEvent.sessionId}
+            }
+            case "CREATED_SESSION_SUCCESSFULLY": {
+                const createdSessionEvent = action as CreatedSessionSuccessfully
+                return {...state, connectedToSession: true, sessionId: createdSessionEvent.sessionId}
+            }
+            case "SERVER_MESSAGE": {
+                const serverMessage = action as ServerMessage
+                handleReceivedMessage(serverMessage.message, videoRef)
+                return state
+            }
+            case "JOIN_SESSION_FAILURE": {
+                return {...state, joinSessionFailure: true}
+            }
+            case "CREATE_SESSION_FAILURE": {
+                return {...state, createSessionFailure: true}
+            }
+        }
+
+        return state;
+    }
+}
+
 function App() {
     const BACKEND_URL = process.env.REACT_APP_BACKEND_URL!
-
-    const [connectedToServer, setConnectedToServer] = useState<boolean>(false)
-    const [connectedToSession, setConnectedToSession] = useState<boolean>(false)
-    const [messages, setMessages] = useState<Array<string>>([])
-    const [joinSessionIdInput, setJoinSessionIdInput] = useState("")
-    const [joinSessionFailure, setJoinSessionFailure] = useState(false)
-    const [createSessionFailure, setCreateSessionFailure] = useState(false)
-    const [sessionId, setSessionId] = useState("")
-
-    const videoRef = useRef<HTMLVideoElement>(null)
-
-    const userId = useRef(v4())
     const connection = useRef(new WebSocket(BACKEND_URL))
+    const videoRef = useRef<HTMLVideoElement>(null)
+    const [joinSessionIdInput, setJoinSessionIdInput] = useState('')
+    const reducer = getReducer(videoRef)
+
+    const [{
+        connectedToServer,
+        connectedToSession,
+        joinSessionFailure,
+        createSessionFailure,
+        sessionId,
+        userId
+    }, dispatch] = useReducer(reducer, initialState);
 
     connection.current.onopen = () => {
-        setConnectedToServer(true)
+        const event = new ConnectedToServerSuccessfully()
+        dispatch(event)
     }
 
     connection.current.onmessage = (event: MessageEvent) => {
         try {
             const parsedEvent = JSON.parse(event.data) as ServerSocketEvent
-            switch (parsedEvent.type) {
-                case "JOINED_SESSION_SUCCESSFULLY": {
-                    setConnectedToSession(true)
-                    setSessionId(joinSessionIdInput)
-                    break
-                }
-                case "CREATED_SESSION_SUCCESSFULLY": {
-                    setConnectedToSession(true)
-                    break
-                }
-                case "SERVER_MESSAGE": {
-                    const serverMessage = parsedEvent as ServerMessage
-                    handleReceivedMessage(serverMessage.message)
-                    setMessages(messages.concat(serverMessage.message))
-                    break
-                }
-                case "JOIN_SESSION_FAILURE": {
-                    setJoinSessionFailure(true)
-                    break
-                }
-                case "CREATE_SESSION_FAILURE": {
-                    setCreateSessionFailure(true)
-                    break
-                }
-            }
-        } catch {
-        }
-    }
-
-    function handleReceivedMessage(message: string) {
-        switch (message) {
-            case "PLAY": videoRef?.current?.play(); break
-            case "PAUSE": videoRef?.current?.pause(); break
+            dispatch(parsedEvent)
+        } catch (error) {
         }
     }
 
@@ -75,14 +106,12 @@ function App() {
 
     function createSession() {
         const newSessionId = v4()
-        setSessionId(newSessionId)
-
-        const createSessionEvent = new CreateSessionEvent(newSessionId, userId.current)
+        const createSessionEvent = new CreateSessionEvent(newSessionId, userId)
         sendMessageToSocket(createSessionEvent)
     }
 
     function joinSession(sessionId: string) {
-        const joinSessionEvent = new JoinSessionEvent(sessionId, userId.current)
+        const joinSessionEvent = new JoinSessionEvent(sessionId, userId)
         sendMessageToSocket(joinSessionEvent)
     }
 
@@ -91,7 +120,8 @@ function App() {
     return (
         <>
             <div data-testid="status">{connectedToServer ? "Connected to server!" : "Connecting to server..."}</div>
-            <div data-testid="session-status">{connectedToSession ? `Connected to session! ${sessionId}` : "Not connected to session..."}</div>
+            <div
+                data-testid="session-status">{connectedToSession ? `Connected to session! ${sessionId}` : "Not connected to session..."}</div>
             {joinSessionFailure && <div>Failed to join session :(</div>}
             {createSessionFailure && <div>Failed to create session :(</div>}
 

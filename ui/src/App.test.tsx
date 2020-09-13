@@ -101,7 +101,7 @@ describe('App', () => {
     async function spoofSuccessfulJoinSession(then: (connection: WebSocket) => Promise<void>) {
         server.on("connection", (connection: WebSocket) => {
             connection.on("message", async () => {
-                const joinedSuccessfully = JSON.stringify(new JoinedSessionSuccessfully())
+                const joinedSuccessfully = JSON.stringify(new JoinedSessionSuccessfully(v4()))
                 connection.send(joinedSuccessfully)
                 await then(connection)
             })
@@ -124,7 +124,7 @@ describe('App', () => {
     async function spoofSuccessfulCreateSession(then: (connection: WebSocket) => Promise<void>) {
         server.on("connection", (connection: WebSocket) => {
             connection.on("message", async () => {
-                const createdSessionSuccessfully = JSON.stringify(new CreatedSessionSuccessfully())
+                const createdSessionSuccessfully = JSON.stringify(new CreatedSessionSuccessfully(v4()))
                 connection.send(createdSessionSuccessfully)
 
                 await then(connection)

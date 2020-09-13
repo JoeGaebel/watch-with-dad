@@ -6,15 +6,25 @@ export abstract class ServerSocketEvent {
     }
 }
 
-export class JoinedSessionSuccessfully extends ServerSocketEvent {
+export class ConnectedToServerSuccessfully extends ServerSocketEvent {
     constructor() {
+        super("CONNECTED_TO_SERVER_SUCCESSFULLY");
+    }
+}
+
+export class JoinedSessionSuccessfully extends ServerSocketEvent {
+    sessionId: string
+    constructor(sessionId: string) {
         super("JOINED_SESSION_SUCCESSFULLY")
+        this.sessionId = sessionId
     }
 }
 
 export class CreatedSessionSuccessfully extends ServerSocketEvent {
-    constructor() {
+    sessionId: string
+    constructor(sessionId: string) {
         super("CREATED_SESSION_SUCCESSFULLY")
+        this.sessionId = sessionId
     }
 }
 

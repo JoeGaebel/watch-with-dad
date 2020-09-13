@@ -42,6 +42,7 @@ describe('Server', () => {
         sender.onmessage = (event: MessageEvent) => {
             const response = JSON.parse(event.data) as CreatedSessionSuccessfully
             expect(response.type).toEqual("CREATED_SESSION_SUCCESSFULLY")
+            expect(response.sessionId).toMatch(createSession.sessionId)
             done()
         }
 
@@ -99,6 +100,7 @@ describe('Server', () => {
         user2.onmessage = (event: MessageEvent) => {
             const response = JSON.parse(event.data) as JoinedSessionSuccessfully
             expect(response.type).toEqual("JOINED_SESSION_SUCCESSFULLY")
+            expect(response.sessionId).toEqual(sessionId)
             done()
         }
 

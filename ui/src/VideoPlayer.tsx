@@ -5,7 +5,7 @@ export interface VideoPlayerProps {
     sendMessageToSocket: (event: ClientSocketEvent) => void,
     videoRef:  MutableRefObject<HTMLVideoElement | null>
     sessionId: string,
-    userId: MutableRefObject<string>
+    userId: string
 }
 
 export function VideoPlayer(props: VideoPlayerProps): JSX.Element {
@@ -27,7 +27,7 @@ export function VideoPlayer(props: VideoPlayerProps): JSX.Element {
     }
 
     function sendMessage(message: string) {
-        const sendMessageEvent = new SendMessageEvent(message, sessionId, userId.current)
+        const sendMessageEvent = new SendMessageEvent(message, sessionId, userId)
         sendMessageToSocket(sendMessageEvent)
     }
 
