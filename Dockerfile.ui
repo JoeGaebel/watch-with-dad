@@ -1,0 +1,16 @@
+FROM node:lts-alpine as build
+ARG backend_url
+ENV REACT_APP_BACKEND_URL=$backend_url
+
+COPY . .
+
+WORKDIR ui
+RUN yarn install
+RUN yarn build
+
+
+FROM nginx:stable-alpine
+COPY --from=build ui/build /usr/share/nginx/html
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
