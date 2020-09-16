@@ -5,8 +5,8 @@
   "author": "Joe Gaebel",
   "license": "UNLICENSED",
   "scripts": {
-    "build-docker-api": "docker build -t joe/api -f ./Dockerfile.api .",
-    "build-docker-ui": "docker build --build-arg backend_url=ws://localhost:9090 -t joe/ui -f ./Dockerfile.ui .",
+    "build-docker-api": "docker build -t joe/api -f k8s/Dockerfile.api .",
+    "build-docker-ui": "docker build --build-arg backend_url=ws://localhost:9090 -t joe/ui -f k8s/Dockerfile.ui .",
     "run-docker-api": "docker run -p 9090:9090 -d joe/api:latest",
     "run-docker-ui": "docker run -p 3000:80 -d joe/ui:latest"
   }

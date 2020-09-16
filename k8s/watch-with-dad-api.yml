@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: watch-with-dad-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: watch-with-dad-api
+  template:
+    metadata:
+      labels:
+        app: watch-with-dad-api
+    spec:
+      containers:
+        - name: api
+          image: joe/api
+          ports:
+            - containerPort: 9090
+          imagePullPolicy: Never
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: watch-with-dad-api
+spec:
+  externalTrafficPolicy: Cluster
+  type: LoadBalancer
+  ports:
+    - name: api
+      port: 9090
+      targetPort: 9090
+      protocol: TCP
+  selector:
+    app: watch-with-dad-api
