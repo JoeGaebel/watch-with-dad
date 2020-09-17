@@ -14,18 +14,16 @@ spec:
     spec:
       containers:
         - name: api
-          image: joe/api
+          image: jgaebel/api:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 9090
-          imagePullPolicy: Never
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: watch-with-dad-api
 spec:
-  externalTrafficPolicy: Cluster
-  type: LoadBalancer
   ports:
     - name: api
       port: 9090

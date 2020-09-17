@@ -14,21 +14,38 @@ spec:
     spec:
       containers:
         - name: ui
-          image: joe/ui
+          image: jgaebel/ui:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 80
-          imagePullPolicy: Never
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: watch-with-dad-ui
+  labels:
+    type: cloud
 spec:
-  externalTrafficPolicy: Cluster
   type: LoadBalancer
   ports:
     - name: ui
       port: 80
+      targetPort: 80
+      protocol: TCP
+  selector:
+    app: watch-with-dad-ui
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: watch-with-dad-ui-local-testing
+  labels:
+    type: local
+spec:
+  type: LoadBalancer
+  ports:
+    - name: ui-testing
+      port: 3000
       targetPort: 80
       protocol: TCP
   selector:

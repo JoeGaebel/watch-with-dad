@@ -15,10 +15,9 @@ import {v4} from "uuid";
 import flushPromises from "flush-promises";
 // @ts-ignore
 import topgun from '../../topgun.mp4'
-
+import * as Util from './util'
 
 describe('App', () => {
-    const fakeBackendPort = 9999
     let server: WebSocket.Server
     let playSpy: jest.SpyInstance
     let pauseSpy: jest.SpyInstance
@@ -43,7 +42,7 @@ describe('App', () => {
         // @ts-ignore
         window.URL = {createObjectURL: createObjectURLSpy}
 
-        process.env.REACT_APP_BACKEND_URL = `ws://localhost:${fakeBackendPort}`
+        jest.spyOn(Util, 'getWebSocketURL').mockReturnValue("ws://localhost:9999")
     })
 
     afterEach(async () => {
@@ -55,7 +54,7 @@ describe('App', () => {
     })
 
     function createServer() {
-        server = new WebSocket.Server({port: fakeBackendPort})
+        server = new WebSocket.Server({port: 9999})
     }
 
     function onServerMessage(block: (message: string) => void) {

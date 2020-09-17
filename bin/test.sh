@@ -4,9 +4,7 @@ trap 'catch $? $LINENO' EXIT
 
 catch() {
   ./bin/kill-all-k8s.sh
-
-  killItByPort 9090
-  killItByPort 3000
+  kill 0
 
   if [ "$1" != "0" ]; then
     echo -e "\n\n\033[0;31mFAILED! \033[0m"
@@ -29,15 +27,15 @@ function wait_for_port()
     done
 }
 
-killItByPort 9090
-killItByPort 3000
+kubectl config use-context minikube
+./bin/kill-all-k8s.sh
 
 (cd ui && yarn build && yarn install && yarn test)
 (cd api && yarn build && yarn install && yarn test)
 
-./bin/run-k8s.sh
+./bin/run-k8s-local.sh
+minikube tunnel -c &
 
-wait_for_port 9090
-wait_for_port 3000
+bin/wait-until-pods-ready.sh 1000 1
 
 (cd e2e && yarn install && yarn test)

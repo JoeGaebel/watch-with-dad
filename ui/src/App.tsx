@@ -3,11 +3,10 @@ import VideoPlayer, {VideoPlayerProps} from "./VideoPlayer";
 import useSocketReducer from "./reducer";
 import useWebSocket from "./hooks/useWebSocket";
 import SocketMessager from "./SocketMessager";
+import {getWebSocketURL} from "./util";
 
 function App() {
-    const BACKEND_URL = process.env.REACT_APP_BACKEND_URL!
-
-    const connection = useRef(new WebSocket(BACKEND_URL))
+    const connection = useRef(new WebSocket(getWebSocketURL()))
     const videoRef = useRef<HTMLVideoElement>(null)
     const socketMessager = useRef(new SocketMessager(connection))
     const [joinSessionIdInput, setJoinSessionIdInput] = useState('')
