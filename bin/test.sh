@@ -4,14 +4,15 @@ trap 'catch $? $LINENO' EXIT
 
 catch() {
   ./bin/kill-all-k8s.sh
-  kill 0
 
   if [ "$1" != "0" ]; then
     echo -e "\n\n\033[0;31mFAILED! \033[0m"
+    kill 0
     return
   fi
 
   echo -e "\n\n\033[0;32mPASSED! \033[0m"
+  kill 0
 }
 
 killItByPort() {
@@ -27,7 +28,7 @@ function wait_for_port()
     done
 }
 
-kubectl config use-context minikube
+./bin/switch-local.sh
 ./bin/kill-all-k8s.sh
 
 (cd ui && yarn build && yarn install && yarn test)
