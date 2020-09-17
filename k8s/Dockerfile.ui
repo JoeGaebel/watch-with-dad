@@ -1,12 +1,5 @@
-FROM node:lts-alpine as build
-COPY . .
-
-WORKDIR ui
-RUN yarn install
-RUN yarn build
-
 FROM nginx:stable-alpine
-COPY --from=build ui/build /usr/share/nginx/html
+COPY ui/build /usr/share/nginx/html
 COPY ui/nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80

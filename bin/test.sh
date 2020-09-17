@@ -29,8 +29,11 @@ function wait_for_port()
 ./bin/switch-local.sh
 ./bin/kill-all-k8s.sh
 
-(cd ui && yarn build && yarn install && yarn test)
-(cd api && yarn build && yarn install && yarn test)
+(cd ui && yarn install && yarn build && yarn test)
+(cd api && yarn install && yarn build && yarn test)
+
+./bin/build-ui.sh
+./bin/build-api.sh
 
 ./bin/run-k8s-local.sh
 minikube tunnel -c 2>&1 > /dev/null &

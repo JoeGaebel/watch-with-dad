@@ -2,8 +2,5 @@ FROM node:lts-alpine
 COPY . .
 
 WORKDIR api
-RUN yarn install
-RUN yarn build
-
 EXPOSE 9090
 ENTRYPOINT [ "node", "./dist/api/src/index.js" ]
