@@ -1,11 +1,12 @@
 # This is a hap-hazard set of notes
 
 # Set the cluster to GKE
+Go on GKE and create a cluster, then run the command it gives to connect, similar to the below:
 ```shell
 gcloud container clusters get-credentials cluster-1 --zone australia-southeast1-a --project rentify-277707
 ```
 
-# Target a context (GKE or Minikube)
+# Switch between cloud and local contexts (GKE or Minikube)
 
 `kubectl config get-contexts`
 
