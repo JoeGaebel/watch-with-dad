@@ -1,10 +1,9 @@
 name: watch-with-dad-k8s
 root: ~/workspace/watch-with-dad
-startup_pane: 3
+startup_pane: 2
 windows:
   - main:
       layout: even-vertical
       panes:
-        - watch -n1 kubectl get services
-        - watch -n1 kubectl get pods
+        - watch -n1 kubectl get all
         -
