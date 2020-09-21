@@ -1,6 +1,6 @@
 name: watch-with-dad-k8s
 root: ~/workspace/watch-with-dad
-
+startup_pane: 3
 windows:
   - main:
       layout: even-vertical
