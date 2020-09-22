@@ -3,4 +3,4 @@ COPY . .
 
 WORKDIR api
 EXPOSE 9090
-ENTRYPOINT [ "node", "./dist/api/src/index.js" ]
+ENTRYPOINT ["node", "./dist/api/src/index.js"]

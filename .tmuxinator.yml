@@ -3,7 +3,7 @@ root: ~/workspace/watch-with-dad
 startup_pane: 2
 windows:
   - main:
-      layout: even-vertical
+      layout: 435c,112x50,0,0[112x16,0,0,0,112x33,0,17,1]
       panes:
         - watch -n1 kubectl get all
         -
