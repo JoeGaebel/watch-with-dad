@@ -29,7 +29,7 @@ function wait_for_port()
 ./bin/switch-local.sh
 ./bin/kill-all-k8s.sh
 
-(cd ui && yarn install && yarn build && yarn test)
+(cd ui && yarn install && REACT_APP_BACKEND_URL="" yarn build && yarn test)
 (cd api && yarn install && yarn build && yarn test)
 
 ./bin/build-ui.sh

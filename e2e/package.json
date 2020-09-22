@@ -5,7 +5,7 @@
   "author": "Joe",
   "license": "MIT",
   "scripts": {
-    "test": "testcafe \"chrome:headless --autoplay-policy=no-user-gesture-required\" test/*.ts"
+    "test": "testcafe \"chrome:headless --autoplay-policy=no-user-gesture-required\" test/*.ts --screenshots takeOnFails=true"
   },
   "dependencies": {
     "typescript": "4.0.2",
