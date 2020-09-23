@@ -92,10 +92,8 @@ describe('App', () => {
         renderResult = render(<App/>)
 
         await waitFor(() => {
-            expect(renderResult!.getByText('Connected to server!')).toBeInTheDocument()
+            expect(renderResult!.getByText('Connected to server 🟢')).toBeInTheDocument()
         })
-
-        expect(renderResult.getByText("Not connected to session...")).toBeInTheDocument()
 
         const sessionIdInput = renderResult.getByTestId("session-id")
         const joinSessionButton = renderResult.getByText('Join Session')
@@ -110,10 +108,8 @@ describe('App', () => {
         renderResult = render(<App/>)
 
         await waitFor(() => {
-            expect(renderResult!.getByText('Connected to server!')).toBeInTheDocument()
+            expect(renderResult!.getByText('Connected to server 🟢')).toBeInTheDocument()
         })
-
-        expect(renderResult.getByText("Not connected to session...")).toBeInTheDocument()
 
         const createSessionButton = renderResult.getByText('Create Session')
 
@@ -212,7 +208,7 @@ describe('App', () => {
 
             await spoofFunction(async () => {
                 await waitFor(() => {
-                    const connectedMessageRegex = new RegExp(`Connected to session! ${uuidRegex}`)
+                    const connectedMessageRegex = new RegExp(`Connected to session 🟢${uuidRegex}`)
                     expect(renderResult!.getByTestId("session-status").textContent).toMatch(connectedMessageRegex)
                 })
 
@@ -571,11 +567,11 @@ describe('App', () => {
         createServer();
 
         const {getByText} = render(<App/>)
-        const status = getByText("Connecting to server...")
+        const status = getByText("Unable to connect to server 🔴")
         expect(status).not.toBeEmpty()
 
         await waitFor(() => {
-            expect(getByText('Connected to server!')).toBeInTheDocument()
+            expect(getByText('Connected to server 🟢')).toBeInTheDocument()
         })
     });
 
@@ -583,13 +579,13 @@ describe('App', () => {
         createServer();
 
         const {getByText, queryByTestId} = render(<App/>)
-        const status = getByText("Connecting to server...")
+        const status = getByText("Unable to connect to server 🔴")
         expect(status).not.toBeEmpty()
 
         expect(queryByTestId("session-container")).not.toBeInTheDocument()
 
         await waitFor(() => {
-            expect(getByText('Connected to server!')).toBeInTheDocument()
+            expect(getByText('Connected to server 🟢')).toBeInTheDocument()
             expect(queryByTestId("session-container")).toBeInTheDocument()
         })
     });

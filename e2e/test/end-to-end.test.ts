@@ -38,8 +38,8 @@ test('plays and pauses in sync', async (t: TestController) => {
   await t.click(Selector("button").withText("Create Session"))
 
   const sessionId = (await Selector('div')
-      .withText(/Connected to session!/)
-      .innerText).match(uuidRegex)![0]
+      .withText(/Connected to session/).innerText)
+      .match(uuidRegex)![0]
 
   await t.expect(Selector("video").visible).eql(false)
 

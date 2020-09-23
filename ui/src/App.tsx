@@ -41,15 +41,19 @@ function App() {
     return (
         <>
             <div data-testid="status">
-                {connectedToServer ? "Connected to server!" : "Connecting to server..."}
+                {connectedToServer ? "Connected to server 🟢" : "Unable to connect to server 🔴"}
             </div>
             <div data-testid="session-status">
-                {connectedToSession ? `Connected to session! ${sessionId}` : "Not connected to session..."}
+                {connectedToSession && <div>
+                    <div>Connected to session 🟢</div>
+                    <div>{sessionId}</div>
+                </div>}
             </div>
 
             {joinSessionFailure && <div>Failed to join session :(</div>}
             {createSessionFailure && <div>Failed to create session :(</div>}
 
+            <br/>
             {connectedToServer && !connectedToSession && <div data-testid="session-container">
                 <button onClick={createSession}>Create Session</button>
 
