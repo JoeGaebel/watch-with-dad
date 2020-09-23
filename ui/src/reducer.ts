@@ -22,7 +22,7 @@ const seekRegex = /^SEEK (\d*\.?\d*$)/
 
 export function getReducer(
     videoRef: MutableRefObject<HTMLVideoElement | null>,
-    socketMessenger: MutableRefObject<SocketMessenger>
+    socketMessenger: MutableRefObject<SocketMessenger | null>
 ): (state: AppState, event: ServerSocketEvent) => AppState {
     return (state: AppState, action: ServerSocketEvent): AppState => {
         switch (action.type) {
@@ -57,21 +57,21 @@ export function getReducer(
 function handleReceivedMessage(
     message: string,
     videoRef: MutableRefObject<HTMLVideoElement | null>,
-    socketMessenger: MutableRefObject<SocketMessenger>
+    socketMessenger: MutableRefObject<SocketMessenger | null>
 ) {
     switch (true) {
         case /PLAY/.test(message):
-            socketMessenger.current.setJustReceivedMessage()
+            socketMessenger.current?.setJustReceivedMessage()
             videoRef?.current?.play().catch(() => {});
             break
         case /PAUSE/.test(message):
-            socketMessenger.current.setJustReceivedMessage()
+            socketMessenger.current?.setJustReceivedMessage()
             videoRef?.current?.pause();
             break
         case /SEEK/.test(message):
             const timestamp = message.match(seekRegex)?.[1]
 
-            if (videoRef.current && timestamp) {
+            if (videoRef.current && socketMessenger.current && timestamp) {
                 socketMessenger.current.setJustReceivedMessage()
                 videoRef.current.currentTime = parseFloat(timestamp);
             }
@@ -82,7 +82,7 @@ function handleReceivedMessage(
 
 export default function useSocketReducer(
     videoRef: MutableRefObject<HTMLVideoElement | null>,
-    socketMessenger: MutableRefObject<SocketMessenger>
+    socketMessenger: MutableRefObject<SocketMessenger | null>
 ) {
     return useReducer(getReducer(videoRef, socketMessenger), initialState);
 }

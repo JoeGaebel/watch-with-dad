@@ -2,14 +2,14 @@ import React, {ChangeEvent, MutableRefObject, SyntheticEvent} from "react";
 import SocketMessenger from "./SocketMessenger";
 
 export interface VideoPlayerProps {
-    socketMessager: MutableRefObject<SocketMessenger>,
+    socketMessenger: MutableRefObject<SocketMessenger | null>,
     videoRef: MutableRefObject<HTMLVideoElement | null>
     sessionId: string,
     userId: string
 }
 
 export default function VideoPlayer(props: VideoPlayerProps): JSX.Element {
-    const {videoRef, sessionId, userId, socketMessager} = props
+    const {videoRef, sessionId, userId, socketMessenger} = props
 
     function handleFile(event: ChangeEvent<HTMLInputElement>) {
         const file = event.target.files?.[0]
@@ -21,15 +21,15 @@ export default function VideoPlayer(props: VideoPlayerProps): JSX.Element {
 
     function handleSeek(event: SyntheticEvent<HTMLVideoElement, Event>) {
         const seekedTime = (event.target as HTMLVideoElement).currentTime
-        socketMessager.current.sendSeek(sessionId, userId, seekedTime)
+        socketMessenger.current?.sendSeek(sessionId, userId, seekedTime)
     }
 
-    function handlePlay(event: SyntheticEvent<HTMLVideoElement, Event>) {
-        socketMessager.current.sendPlay(sessionId, userId);
+    function handlePlay(_: SyntheticEvent<HTMLVideoElement, Event>) {
+        socketMessenger.current?.sendPlay(sessionId, userId);
     }
 
-    function handlePause(event: SyntheticEvent<HTMLVideoElement, Event>) {
-        socketMessager.current.sendPause(sessionId, userId);
+    function handlePause(_: SyntheticEvent<HTMLVideoElement, Event>) {
+        socketMessenger.current?.sendPause(sessionId, userId);
     }
 
     const videoStyle = {

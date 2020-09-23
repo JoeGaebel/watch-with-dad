@@ -22,7 +22,7 @@ describe('App', () => {
     let playSpy: jest.SpyInstance
     let pauseSpy: jest.SpyInstance
     let createObjectURLSpy: jest.SpyInstance
-    let renderResult: RenderResult
+    let renderResult: RenderResult | null
 
     const uuidRegex = "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
 
@@ -33,7 +33,7 @@ describe('App', () => {
     }
 
     function triggerEvent(eventName: TriggerEvent) {
-        const video = renderResult.getByTestId("video")
+        const video = renderResult!.getByTestId("video")
         switch (eventName) {
             case TriggerEvent.PLAY:
                 fireEvent.play(video)
@@ -49,6 +49,7 @@ describe('App', () => {
     }
 
     beforeEach(() => {
+        renderResult = null
         jest.resetAllMocks()
 
         playSpy = jest
@@ -91,7 +92,7 @@ describe('App', () => {
         renderResult = render(<App/>)
 
         await waitFor(() => {
-            expect(renderResult.getByText('Connected to server!')).toBeInTheDocument()
+            expect(renderResult!.getByText('Connected to server!')).toBeInTheDocument()
         })
 
         expect(renderResult.getByText("Not connected to session...")).toBeInTheDocument()
@@ -109,7 +110,7 @@ describe('App', () => {
         renderResult = render(<App/>)
 
         await waitFor(() => {
-            expect(renderResult.getByText('Connected to server!')).toBeInTheDocument()
+            expect(renderResult!.getByText('Connected to server!')).toBeInTheDocument()
         })
 
         expect(renderResult.getByText("Not connected to session...")).toBeInTheDocument()
@@ -173,7 +174,7 @@ describe('App', () => {
 
             await spoofSuccessfulCreateSession(async () => {
                 await waitFor(() => {
-                    expect(renderResult.queryByTestId("session-container")).not.toBeInTheDocument()
+                    expect(renderResult!.queryByTestId("session-container")).not.toBeInTheDocument()
                 })
                 done()
             })
@@ -191,14 +192,14 @@ describe('App', () => {
 
             await spoofFunction(async () => {
                 await waitFor(() => {
-                    expect(renderResult.queryByTestId("message-container")).toBeInTheDocument()
+                    expect(renderResult!.queryByTestId("message-container")).toBeInTheDocument()
                 })
 
                 done()
             })
 
             await renderFunction()
-            expect(renderResult.queryByTestId("message-container")).not.toBeInTheDocument()
+            expect(renderResult!.queryByTestId("message-container")).not.toBeInTheDocument()
         });
     }
 
@@ -212,7 +213,7 @@ describe('App', () => {
             await spoofFunction(async () => {
                 await waitFor(() => {
                     const connectedMessageRegex = new RegExp(`Connected to session! ${uuidRegex}`)
-                    expect(renderResult.getByTestId("session-status").textContent).toMatch(connectedMessageRegex)
+                    expect(renderResult!.getByTestId("session-status").textContent).toMatch(connectedMessageRegex)
                 })
 
                 done()
@@ -233,9 +234,9 @@ describe('App', () => {
             await spoofFunction(async () => {
                 await waitFor(() => {
                     if (join) {
-                        expect(renderResult.getByText("Failed to join session :(")).toBeInTheDocument()
+                        expect(renderResult!.getByText("Failed to join session :(")).toBeInTheDocument()
                     } else {
-                        expect(renderResult.getByText("Failed to create session :(")).toBeInTheDocument()
+                        expect(renderResult!.getByText("Failed to create session :(")).toBeInTheDocument()
                     }
                 })
 
@@ -243,8 +244,8 @@ describe('App', () => {
             })
 
             await renderFunction()
-            expect(renderResult.queryByText("Failed to join session :(")).not.toBeInTheDocument()
-            expect(renderResult.queryByText("Failed to create session :(")).not.toBeInTheDocument()
+            expect(renderResult!.queryByText("Failed to join session :(")).not.toBeInTheDocument()
+            expect(renderResult!.queryByText("Failed to create session :(")).not.toBeInTheDocument()
         });
     }
 
@@ -294,10 +295,10 @@ describe('App', () => {
                 })
 
                 await waitFor(() => {
-                    expect(renderResult.queryByTestId("message-container")).toBeInTheDocument()
+                    expect(renderResult!.queryByTestId("message-container")).toBeInTheDocument()
                 })
 
-                const video = renderResult.getByTestId("video")
+                const video = renderResult!.getByTestId("video")
                 fireEvent.play(video)
             })
 
@@ -324,10 +325,10 @@ describe('App', () => {
                 })
 
                 await waitFor(() => {
-                    expect(renderResult.queryByTestId("message-container")).toBeInTheDocument()
+                    expect(renderResult!.queryByTestId("message-container")).toBeInTheDocument()
                 })
 
-                const video = renderResult.getByTestId("video")
+                const video = renderResult!.getByTestId("video")
                 fireEvent.pause(video)
             })
 
@@ -350,7 +351,7 @@ describe('App', () => {
                 })
 
                 await waitFor(() => {
-                    video = renderResult.queryByTestId("video") as HTMLVideoElement | null
+                    video = renderResult!.queryByTestId("video") as HTMLVideoElement | null
                     expect(video).toBeInTheDocument()
                 })
 
@@ -387,7 +388,7 @@ describe('App', () => {
                 })
 
                 await waitFor(() => {
-                    video = renderResult.queryByTestId("video") as HTMLVideoElement | null
+                    video = renderResult!.queryByTestId("video") as HTMLVideoElement | null
                     expect(video).toBeInTheDocument()
                 })
 
@@ -420,13 +421,13 @@ describe('App', () => {
                 let video: HTMLVideoElement
 
                 await waitFor(() => {
-                    video = renderResult.getByTestId("video") as HTMLVideoElement
+                    video = renderResult!.getByTestId("video") as HTMLVideoElement
                     expect(video).toBeInTheDocument()
                 })
 
                 expect(video!.src).toEqual("")
 
-                const fileInput = renderResult.getByTestId("file-input")
+                const fileInput = renderResult!.getByTestId("file-input")
 
                 act(() => {
                     fireEvent.change(fileInput, {
@@ -464,10 +465,10 @@ describe('App', () => {
                 })
 
                 await waitFor(() => {
-                    expect(renderResult.queryByTestId("message-container")).toBeInTheDocument()
+                    expect(renderResult!.queryByTestId("message-container")).toBeInTheDocument()
                 })
 
-                const video = renderResult.getByTestId("video") as HTMLVideoElement
+                const video = renderResult!.getByTestId("video") as HTMLVideoElement
                 fireEvent.seeking(video)
                 video.currentTime = 666.001
                 fireEvent.seeked(video)
@@ -492,7 +493,7 @@ describe('App', () => {
                 })
 
                 await waitFor(() => {
-                    video = renderResult.queryByTestId("video") as HTMLVideoElement | null
+                    video = renderResult!.queryByTestId("video") as HTMLVideoElement | null
                     expect(video).toBeInTheDocument()
                 })
 

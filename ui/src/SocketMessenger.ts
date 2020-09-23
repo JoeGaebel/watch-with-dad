@@ -3,16 +3,16 @@ import {v4} from "uuid";
 import {MutableRefObject} from "react";
 
 export default class SocketMessenger {
-    socketRef: MutableRefObject<WebSocket>
+    socketRef: MutableRefObject<WebSocket | null>
     private justReceivedMessage: boolean = false
 
-    constructor(socketRef: MutableRefObject<WebSocket>) {
+    constructor(socketRef: MutableRefObject<WebSocket | null>) {
         this.socketRef = socketRef
     }
 
     private sendMessageToSocket(event: ClientSocketEvent) {
         const stringEvent = JSON.stringify(event)
-        this.socketRef.current.send(stringEvent)
+        this.socketRef.current?.send(stringEvent)
     }
 
     setJustReceivedMessage() {

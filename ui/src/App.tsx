@@ -1,4 +1,4 @@
-import React, {useRef, useState} from 'react';
+import React, {MutableRefObject, useEffect, useRef, useState} from 'react';
 import VideoPlayer, {VideoPlayerProps} from "./VideoPlayer";
 import useSocketReducer from "./reducer";
 import useWebSocket from "./hooks/useWebSocket";
@@ -6,9 +6,15 @@ import SocketMessenger from "./SocketMessenger";
 import {getWebSocketURL} from "./util";
 
 function App() {
-    const connection = useRef(new WebSocket(getWebSocketURL()))
+    const connection: MutableRefObject<WebSocket | null> = useRef(null)
+    const socketMessenger: MutableRefObject<SocketMessenger | null> = useRef(null)
+
+    useEffect(() => {
+        connection.current = new WebSocket(getWebSocketURL())
+        socketMessenger.current = new SocketMessenger(connection)
+    }, [])
+
     const videoRef = useRef<HTMLVideoElement>(null)
-    const socketMessenger = useRef(new SocketMessenger(connection))
     const [joinSessionIdInput, setJoinSessionIdInput] = useState('')
 
     const [{
@@ -22,7 +28,15 @@ function App() {
 
     useWebSocket(connection, dispatch)
 
-    const videoPlayerProps: VideoPlayerProps = {userId, sessionId, socketMessager: socketMessenger, videoRef}
+    function createSession() {
+        socketMessenger.current?.createSession(userId)
+    }
+
+    function joinSession() {
+        socketMessenger.current?.joinSession(joinSessionIdInput, userId)
+    }
+
+    const videoPlayerProps: VideoPlayerProps = {userId, sessionId, socketMessenger, videoRef}
 
     return (
         <>
@@ -37,10 +51,10 @@ function App() {
             {createSessionFailure && <div>Failed to create session :(</div>}
 
             {connectedToServer && !connectedToSession && <div data-testid="session-container">
-                <button onClick={() => socketMessenger.current.createSession(userId)}>Create Session</button>
+                <button onClick={createSession}>Create Session</button>
 
                 <div>
-                    <button onClick={() => socketMessenger.current.joinSession(joinSessionIdInput, userId)}>Join Session</button>
+                    <button onClick={joinSession}>Join Session</button>
                     <input onChange={({target: {value}}) => setJoinSessionIdInput(value)} data-testid="session-id"/>
                 </div>
             </div>}
