@@ -53,7 +53,7 @@ function App() {
                 {connectedToSession && <SessionStatusContainer>
                     <div>Connected to session 🟢</div>
                     <br/>
-                    <div>{sessionId}</div>
+                    <div data-testid="session-id">{sessionId}</div>
                 </SessionStatusContainer>}
             </div>
 

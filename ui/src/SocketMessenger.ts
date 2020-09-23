@@ -1,5 +1,5 @@
 import {ClientSocketEvent, CreateSessionEvent, JoinSessionEvent, SendMessageEvent} from "./types/shared";
-import {v4} from "uuid";
+import uuid from "short-uuid";
 import {MutableRefObject} from "react";
 
 export default class SocketMessenger {
@@ -42,7 +42,7 @@ export default class SocketMessenger {
     }
 
     createSession(userId: string) {
-        const newSessionId = v4()
+        const newSessionId = uuid.generate()
         const createSessionEvent = new CreateSessionEvent(newSessionId, userId)
         this.sendMessageToSocket(createSessionEvent)
     }

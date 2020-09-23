@@ -6,7 +6,7 @@ import {
     ServerMessage,
     ServerSocketEvent
 } from "./types/shared";
-import {v4} from "uuid";
+import uuid from "short-uuid"
 import SocketMessenger from "./SocketMessenger";
 
 export const initialState: AppState = {
@@ -15,7 +15,7 @@ export const initialState: AppState = {
     joinSessionFailure: false,
     createSessionFailure: false,
     sessionId: '',
-    userId: v4()
+    userId: uuid.generate()
 }
 
 const seekRegex = /^SEEK (\d*\.?\d*$)/

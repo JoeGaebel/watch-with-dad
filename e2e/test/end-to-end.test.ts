@@ -7,8 +7,6 @@ const topgun = path.resolve("../topgun.mp4")
 fixture `Watch With Dad`
     .page(frontendURL);
 
-const uuidRegex = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/
-
 function getVideoPaused(t: TestController): Promise<boolean> {
   return t.eval(() => (document.getElementById("video") as HTMLVideoElement).paused)
 }
@@ -37,9 +35,7 @@ test('plays and pauses in sync', async (t: TestController) => {
 
   await t.click(Selector("button").withText("Create Session"))
 
-  const sessionId = (await Selector('div')
-      .withText(/Connected to session/).innerText)
-      .match(uuidRegex)![0]
+  const sessionId = (await Selector('[data-testid="session-id"]').innerText)
 
   await t.expect(Selector("video").visible).eql(false)
 

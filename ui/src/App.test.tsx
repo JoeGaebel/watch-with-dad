@@ -11,8 +11,8 @@ import {
     SendMessageEvent,
     ServerMessage
 } from "./types/shared";
-import {v4} from "uuid";
 import flushPromises from "flush-promises";
+import uuid from "short-uuid"
 // @ts-ignore
 import topgun from '../../topgun.mp4'
 import * as Util from './util'
@@ -24,7 +24,7 @@ describe('App', () => {
     let createObjectURLSpy: jest.SpyInstance
     let renderResult: RenderResult | null
 
-    const uuidRegex = "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
+    const uuidRegex = ".{22}$"
 
     enum TriggerEvent {
         PLAY,
@@ -98,7 +98,7 @@ describe('App', () => {
         const sessionIdInput = renderResult.getByTestId("session-id")
         const joinSessionButton = renderResult.getByText('Join Session')
 
-        fireEvent.change(sessionIdInput, {target: {value: v4()}})
+        fireEvent.change(sessionIdInput, {target: {value: uuid.generate()}})
         fireEvent.click(joinSessionButton)
 
         return renderResult
@@ -121,7 +121,7 @@ describe('App', () => {
     async function spoofSuccessfulJoinSession(then: (connection: WebSocket) => Promise<void>) {
         server.on("connection", (connection: WebSocket) => {
             connection.on("message", async () => {
-                const joinedSuccessfully = JSON.stringify(new JoinedSessionSuccessfully(v4()))
+                const joinedSuccessfully = JSON.stringify(new JoinedSessionSuccessfully(uuid.generate()))
                 connection.send(joinedSuccessfully)
                 await then(connection)
             })
@@ -143,7 +143,7 @@ describe('App', () => {
     async function spoofSuccessfulCreateSession(then: (connection: WebSocket) => Promise<void>) {
         server.on("connection", (connection: WebSocket) => {
             connection.on("message", async () => {
-                const createdSessionSuccessfully = JSON.stringify(new CreatedSessionSuccessfully(v4()))
+                const createdSessionSuccessfully = JSON.stringify(new CreatedSessionSuccessfully(uuid.generate()))
                 connection.send(createdSessionSuccessfully)
 
                 await then(connection)

@@ -15,7 +15,7 @@ yarn-error.log
 */coverage
 
 # production
-build
+ui/build
 
 */screenshots
 

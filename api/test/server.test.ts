@@ -6,7 +6,7 @@ import {
     JoinedSessionSuccessfully,
     JoinSessionEvent, SendMessageEvent, ServerMessage
 } from "../../ui/src/types/shared";
-import {v4} from "uuid";
+import uuid from "short-uuid"
 
 const WebSocket = require("ws");
 
@@ -36,7 +36,7 @@ describe('Server', () => {
     it('responds successfully creating a session', (done) => {
         createServer();
 
-        const createSession = new CreateSessionEvent(v4(), v4())
+        const createSession = new CreateSessionEvent(uuid.generate(), uuid.generate())
         const sender = new WebSocket("ws://localhost:9090")
 
         sender.onmessage = (event: MessageEvent) => {
@@ -54,9 +54,9 @@ describe('Server', () => {
     it('does not allow two sessions with the same id', (done) => {
         createServer();
 
-        const sameUUID = v4()
+        const sameUUID = uuid.generate()
 
-        const createSession = new CreateSessionEvent(sameUUID, v4())
+        const createSession = new CreateSessionEvent(sameUUID, uuid.generate())
 
         const sender = new WebSocket("ws://localhost:9090")
 
@@ -82,10 +82,10 @@ describe('Server', () => {
     it('allows joining a session', (done) => {
         createServer();
 
-        const sessionId = v4()
+        const sessionId = uuid.generate()
 
-        const createSession = new CreateSessionEvent(sessionId, v4())
-        const joinSession = new JoinSessionEvent(sessionId, v4())
+        const createSession = new CreateSessionEvent(sessionId, uuid.generate())
+        const joinSession = new JoinSessionEvent(sessionId, uuid.generate())
 
         const user1 = new WebSocket("ws://localhost:9090")
         const user2 = new WebSocket("ws://localhost:9090")
@@ -112,7 +112,7 @@ describe('Server', () => {
     it('returns an error if there is no session to join', (done) => {
         createServer();
 
-        const joinSession = new JoinSessionEvent(v4(), v4())
+        const joinSession = new JoinSessionEvent(uuid.generate(), uuid.generate())
 
         const user = new WebSocket("ws://localhost:9090")
 
@@ -130,9 +130,9 @@ describe('Server', () => {
     it('forwards a message from one client to the other', (done) => {
         createServer();
 
-        const sessionId = v4()
-        const user1Id = v4();
-        const user2Id = v4();
+        const sessionId = uuid.generate()
+        const user1Id = uuid.generate();
+        const user2Id = uuid.generate();
 
         const createSession = new CreateSessionEvent(sessionId, user1Id)
         const joinSession = new JoinSessionEvent(sessionId, user2Id)
@@ -216,9 +216,9 @@ describe('Server', () => {
         it('cleans up users and sessions', (done) => {
             createServer();
 
-            const sessionId = v4()
-            const createSession = new CreateSessionEvent(sessionId, v4())
-            const joinSession = new JoinSessionEvent(sessionId, v4())
+            const sessionId = uuid.generate()
+            const createSession = new CreateSessionEvent(sessionId, uuid.generate())
+            const joinSession = new JoinSessionEvent(sessionId, uuid.generate())
 
             const user1 = new WebSocket("ws://localhost:9090")
             const user2 = new WebSocket("ws://localhost:9090")
