@@ -20,7 +20,7 @@ export const initialState: AppState = {
 
 const seekRegex = /^SEEK (\d*\.?\d*$)/
 
-function getReducer(
+export function getReducer(
     videoRef: MutableRefObject<HTMLVideoElement | null>,
     socketMessenger: MutableRefObject<SocketMessenger>
 ): (state: AppState, event: ServerSocketEvent) => AppState {
@@ -62,7 +62,7 @@ function handleReceivedMessage(
     switch (true) {
         case /PLAY/.test(message):
             socketMessenger.current.setJustReceivedMessage()
-            videoRef?.current?.play();
+            videoRef?.current?.play().catch(() => {});
             break
         case /PAUSE/.test(message):
             socketMessenger.current.setJustReceivedMessage()
