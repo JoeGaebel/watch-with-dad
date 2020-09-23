@@ -1,5 +1,6 @@
 import React, {ChangeEvent, MutableRefObject, SyntheticEvent} from "react";
 import SocketMessenger from "./SocketMessenger";
+import styled from "styled-components";
 
 export interface VideoPlayerProps {
     socketMessenger: MutableRefObject<SocketMessenger | null>,
@@ -39,7 +40,7 @@ export default function VideoPlayer(props: VideoPlayerProps): JSX.Element {
         display: "none"
     }
 
-    return <div data-testid="message-container">
+    return <VideoContainer data-testid="video-container">
         <input
             type="file"
             data-testid="file-input"
@@ -47,18 +48,26 @@ export default function VideoPlayer(props: VideoPlayerProps): JSX.Element {
             accept="video/mp4,video/x-m4v,video/*"
         />
         <br/>
-        <video
+        <Video
             // @ts-ignore
             style={videoStyle}
             id="video"
             data-testid="video"
             ref={videoRef}
             controls
-            width={400}
-            height={200}
             onPlay={handlePlay}
             onPause={handlePause}
             onSeeked={handleSeek}
         />
-    </div>
+    </VideoContainer>
 }
+
+const VideoContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+`
+
+const Video = styled.video`
+    width: 100%
+`

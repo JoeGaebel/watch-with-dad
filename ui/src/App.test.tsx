@@ -188,14 +188,14 @@ describe('App', () => {
 
             await spoofFunction(async () => {
                 await waitFor(() => {
-                    expect(renderResult!.queryByTestId("message-container")).toBeInTheDocument()
+                    expect(renderResult!.queryByTestId("video-container")).toBeInTheDocument()
                 })
 
                 done()
             })
 
             await renderFunction()
-            expect(renderResult!.queryByTestId("message-container")).not.toBeInTheDocument()
+            expect(renderResult!.queryByTestId("video-container")).not.toBeInTheDocument()
         });
     }
 
@@ -291,7 +291,7 @@ describe('App', () => {
                 })
 
                 await waitFor(() => {
-                    expect(renderResult!.queryByTestId("message-container")).toBeInTheDocument()
+                    expect(renderResult!.queryByTestId("video-container")).toBeInTheDocument()
                 })
 
                 const video = renderResult!.getByTestId("video")
@@ -321,7 +321,7 @@ describe('App', () => {
                 })
 
                 await waitFor(() => {
-                    expect(renderResult!.queryByTestId("message-container")).toBeInTheDocument()
+                    expect(renderResult!.queryByTestId("video-container")).toBeInTheDocument()
                 })
 
                 const video = renderResult!.getByTestId("video")
@@ -461,7 +461,7 @@ describe('App', () => {
                 })
 
                 await waitFor(() => {
-                    expect(renderResult!.queryByTestId("message-container")).toBeInTheDocument()
+                    expect(renderResult!.queryByTestId("video-container")).toBeInTheDocument()
                 })
 
                 const video = renderResult!.getByTestId("video") as HTMLVideoElement
