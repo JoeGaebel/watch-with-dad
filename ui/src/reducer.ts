@@ -31,11 +31,23 @@ export function getReducer(
             }
             case "JOINED_SESSION_SUCCESSFULLY": {
                 const joinedSessionEvent = action as JoinedSessionSuccessfully
-                return {...state, connectedToSession: true, sessionId: joinedSessionEvent.sessionId}
+                return {
+                    ...state,
+                    connectedToSession: true,
+                    sessionId: joinedSessionEvent.sessionId,
+                    createSessionFailure: false,
+                    joinSessionFailure: false
+                }
             }
             case "CREATED_SESSION_SUCCESSFULLY": {
                 const createdSessionEvent = action as CreatedSessionSuccessfully
-                return {...state, connectedToSession: true, sessionId: createdSessionEvent.sessionId}
+                return {
+                    ...state,
+                    connectedToSession: true,
+                    sessionId: createdSessionEvent.sessionId,
+                    createSessionFailure: false,
+                    joinSessionFailure: false
+                }
             }
             case "SERVER_MESSAGE": {
                 const serverMessage = action as ServerMessage
