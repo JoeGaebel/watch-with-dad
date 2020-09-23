@@ -26,6 +26,9 @@ function wait_for_port()
     done
 }
 
+killItByPort 3000
+killItByPort 9090
+
 ./bin/switch-local.sh
 ./bin/kill-all-k8s.sh
 
