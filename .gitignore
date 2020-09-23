@@ -17,7 +17,7 @@ yarn-error.log
 # production
 build
 
-dist
+*/screenshots
 
 # misc
 .DS_Store

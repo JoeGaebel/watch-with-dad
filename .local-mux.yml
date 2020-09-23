@@ -1,0 +1,14 @@
+name: watch-with-dad-local
+root: ~/workspace/watch-with-dad
+startup_pane: 3
+windows:
+  - main:
+      layout: 3aca,112x50,0,0[112x11,0,0,0,112x7,0,12,1,112x30,0,20,2]
+      panes:
+        - ui:
+          - cd ui
+          - yarn start
+        - api:
+          - cd api
+          - yarn startdev
+        -

@@ -18,7 +18,7 @@
   },
   "proxy": "",
   "scripts": {
-    "start": "REACT_APP_BACKEND_URL=ws://localhost:9090 CI=true BROWSER=NONE react-scripts start",
+    "start": "CI=true BROWSER=NONE react-scripts start",
     "build": "react-scripts build",
     "test": "CI=true react-scripts test --env=jest-environment-jsdom-sixteen",
     "eject": "react-scripts eject"

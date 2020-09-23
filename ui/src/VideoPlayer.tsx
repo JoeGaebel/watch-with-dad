@@ -1,9 +1,9 @@
-import React, {ChangeEvent, MutableRefObject} from "react";
-import SocketMessager from "./SocketMessager";
+import React, {ChangeEvent, MutableRefObject, SyntheticEvent} from "react";
+import SocketMessenger from "./SocketMessenger";
 
 export interface VideoPlayerProps {
-    socketMessager: MutableRefObject<SocketMessager>,
-    videoRef:  MutableRefObject<HTMLVideoElement | null>
+    socketMessager: MutableRefObject<SocketMessenger>,
+    videoRef: MutableRefObject<HTMLVideoElement | null>
     sessionId: string,
     userId: string
 }
@@ -16,6 +16,19 @@ export default function VideoPlayer(props: VideoPlayerProps): JSX.Element {
         if (file && videoRef.current) {
             videoRef.current.src = URL.createObjectURL(file)
         }
+    }
+
+    function handleSeek(event: SyntheticEvent<HTMLVideoElement, Event>) {
+        const seekedTime = (event.target as HTMLVideoElement).currentTime
+        socketMessager.current.sendSeek(sessionId, userId, seekedTime)
+    }
+
+    function handlePlay(event: SyntheticEvent<HTMLVideoElement, Event>) {
+        socketMessager.current.sendPlay(sessionId, userId);
+    }
+
+    function handlePause(event: SyntheticEvent<HTMLVideoElement, Event>) {
+        socketMessager.current.sendPause(sessionId, userId);
     }
 
     return <div data-testid="message-container">
@@ -38,8 +51,9 @@ export default function VideoPlayer(props: VideoPlayerProps): JSX.Element {
             controls
             width={400}
             height={200}
-            onPlay={() => socketMessager.current.sendPlay(sessionId, userId)}
-            onPause={() => socketMessager.current.sendPause(sessionId, userId)}
+            onPlay={handlePlay}
+            onPause={handlePause}
+            onSeeked={handleSeek}
         />
     </div>
 }

@@ -21,6 +21,14 @@ function pauseVideo(t: TestController) {
   return t.eval(() => (document.getElementById("video") as HTMLVideoElement).pause())
 }
 
+function seekVideo(t: TestController) {
+  return t.eval(() => (document.getElementById("video") as HTMLVideoElement).currentTime = 30.01)
+}
+
+function getCurrentTime(t: TestController): Promise<number> {
+  return t.eval(() => (document.getElementById("video") as HTMLVideoElement).currentTime)
+}
+
 test('plays and pauses in sync', async (t: TestController) => {
   const initialWindow = await t.getCurrentWindow();
   const secondWindow = await t.openWindow(frontendURL);
@@ -58,4 +66,14 @@ test('plays and pauses in sync', async (t: TestController) => {
 
   await t.switchToWindow(secondWindow);
   await t.expect(await getVideoPaused(t)).eql(true)
+
+  const currentTimeSecondWindow = await getCurrentTime(t)
+  await t.expect(currentTimeSecondWindow).notEql(30.01)
+
+  await seekVideo(t)
+  const updatedTimeSecondWindow = await getCurrentTime(t)
+  await t.expect(updatedTimeSecondWindow).eql(30.01)
+
+  await t.switchToWindow(initialWindow);
+  await t.expect(await getCurrentTime(t)).eql(30.01)
 });

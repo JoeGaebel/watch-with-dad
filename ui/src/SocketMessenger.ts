@@ -2,8 +2,9 @@ import {ClientSocketEvent, CreateSessionEvent, JoinSessionEvent, SendMessageEven
 import {v4} from "uuid";
 import {MutableRefObject} from "react";
 
-export default class SocketMessager {
+export default class SocketMessenger {
     socketRef: MutableRefObject<WebSocket>
+    private justReceivedMessage: boolean = false
 
     constructor(socketRef: MutableRefObject<WebSocket>) {
         this.socketRef = socketRef
@@ -14,6 +15,10 @@ export default class SocketMessager {
         this.socketRef.current.send(stringEvent)
     }
 
+    setJustReceivedMessage() {
+        this.justReceivedMessage = true
+    }
+
     sendPlay(sessionId: string, userId: string) {
         this.sendMessage("PLAY", sessionId, userId)
     }
@@ -22,7 +27,16 @@ export default class SocketMessager {
         this.sendMessage("PAUSE", sessionId, userId)
     }
 
+    sendSeek(sessionId: string, userId: string, seekedTime: number) {
+        this.sendMessage(`SEEK ${seekedTime}`, sessionId, userId)
+    }
+
     sendMessage(message: string, sessionId: string, userId: string) {
+        if (this.justReceivedMessage) {
+            this.justReceivedMessage = false
+            return
+        }
+
         const sendMessageEvent = new SendMessageEvent(message, sessionId, userId)
         this.sendMessageToSocket(sendMessageEvent)
     }

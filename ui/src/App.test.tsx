@@ -22,18 +22,42 @@ describe('App', () => {
     let playSpy: jest.SpyInstance
     let pauseSpy: jest.SpyInstance
     let createObjectURLSpy: jest.SpyInstance
+    let renderResult: RenderResult
 
     const uuidRegex = "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
 
+    enum TriggerEvent {
+        PLAY,
+        PAUSE,
+        SEEK
+    }
+
+    function triggerEvent(eventName: TriggerEvent) {
+        const video = renderResult.getByTestId("video")
+        switch (eventName) {
+            case TriggerEvent.PLAY:
+                fireEvent.play(video)
+                break
+            case TriggerEvent.PAUSE:
+                fireEvent.pause(video)
+                break
+            case TriggerEvent.SEEK:
+                fireEvent.seeked(video)
+                break
+        }
+        return Promise.resolve()
+    }
+
     beforeEach(() => {
         jest.resetAllMocks()
+
         playSpy = jest
             .spyOn(window.HTMLMediaElement.prototype, 'play')
-            .mockImplementation()
+            .mockImplementation(() => triggerEvent(TriggerEvent.PLAY))
 
         pauseSpy = jest
             .spyOn(window.HTMLMediaElement.prototype, 'pause')
-            .mockImplementation()
+            .mockImplementation(() => triggerEvent(TriggerEvent.PAUSE))
 
         createObjectURLSpy = jest
             .fn()
@@ -64,7 +88,7 @@ describe('App', () => {
     }
 
     async function renderAndJoinSession(): Promise<RenderResult> {
-        const renderResult = render(<App/>)
+        renderResult = render(<App/>)
 
         await waitFor(() => {
             expect(renderResult.getByText('Connected to server!')).toBeInTheDocument()
@@ -82,7 +106,7 @@ describe('App', () => {
     }
 
     async function renderAndCreateSession(): Promise<RenderResult> {
-        const renderResult = render(<App/>)
+        renderResult = render(<App/>)
 
         await waitFor(() => {
             expect(renderResult.getByText('Connected to server!')).toBeInTheDocument()
@@ -104,7 +128,6 @@ describe('App', () => {
                 connection.send(joinedSuccessfully)
                 await then(connection)
             })
-
         })
     }
 
@@ -155,7 +178,7 @@ describe('App', () => {
                 done()
             })
 
-            const renderResult = await renderFunction()
+            await renderFunction()
         })
     }
 
@@ -174,7 +197,7 @@ describe('App', () => {
                 done()
             })
 
-            const renderResult = await renderFunction()
+            await renderFunction()
             expect(renderResult.queryByTestId("message-container")).not.toBeInTheDocument()
         });
     }
@@ -195,7 +218,7 @@ describe('App', () => {
                 done()
             })
 
-            const renderResult = await renderFunction()
+            await renderFunction()
         })
     }
 
@@ -219,7 +242,7 @@ describe('App', () => {
                 done()
             })
 
-            const renderResult = await renderFunction()
+            await renderFunction()
             expect(renderResult.queryByText("Failed to join session :(")).not.toBeInTheDocument()
             expect(renderResult.queryByText("Failed to create session :(")).not.toBeInTheDocument()
         });
@@ -278,7 +301,7 @@ describe('App', () => {
                 fireEvent.play(video)
             })
 
-            const renderResult = await renderFunction()
+            await renderFunction()
         });
     }
 
@@ -308,7 +331,7 @@ describe('App', () => {
                 fireEvent.pause(video)
             })
 
-            const renderResult = await renderFunction()
+            await renderFunction()
         });
     }
 
@@ -345,7 +368,7 @@ describe('App', () => {
                 done()
             })
 
-            const renderResult = await renderFunction()
+            await renderFunction()
         })
     }
 
@@ -382,7 +405,7 @@ describe('App', () => {
                 done()
             })
 
-            const renderResult = await renderFunction()
+            await renderFunction()
         })
     }
 
@@ -418,7 +441,76 @@ describe('App', () => {
                 done()
             })
 
-            const renderResult = await renderFunction()
+            await renderFunction()
+        })
+    }
+
+    function assertSendingSeek(
+        spoofFunction: (arg: (connection: WebSocket) => Promise<void>) => Promise<void>,
+        renderFunction: () => Promise<RenderResult>
+    ) {
+        it('sends a SEEK message when the video is seeked', async (done) => {
+            createServer();
+
+            await spoofFunction(async (connection: WebSocket) => {
+                connection.on("message", (message: string) => {
+                    const parsedEvent = JSON.parse(message) as SendMessageEvent
+                    expect(parsedEvent.sessionId).toMatch(new RegExp(uuidRegex))
+                    expect(parsedEvent.type).toMatch("SEND_MESSAGE")
+                    expect(parsedEvent.userId).toMatch(new RegExp(uuidRegex))
+                    expect(parsedEvent.message).toEqual("SEEK 666.001")
+
+                    done()
+                })
+
+                await waitFor(() => {
+                    expect(renderResult.queryByTestId("message-container")).toBeInTheDocument()
+                })
+
+                const video = renderResult.getByTestId("video") as HTMLVideoElement
+                fireEvent.seeking(video)
+                video.currentTime = 666.001
+                fireEvent.seeked(video)
+            })
+
+            await renderFunction()
+        });
+    }
+
+    function assertReceivingSeek(
+        spoofFunction: (arg: any) => Promise<void>,
+        renderFunction: () => Promise<RenderResult>
+    ) {
+        it('seeks the video to the received spot and does not repeat the message', async (done) => {
+            createServer();
+
+            await spoofFunction(async (connection: WebSocket) => {
+                let video: HTMLVideoElement | null = null;
+
+                connection.on("message", () => {
+                    fail("It sent a message :(")
+                })
+
+                await waitFor(() => {
+                    video = renderResult.queryByTestId("video") as HTMLVideoElement | null
+                    expect(video).toBeInTheDocument()
+                })
+
+                const serverMessage = JSON.stringify(new ServerMessage("SEEK 666.001"))
+                connection.send(serverMessage)
+
+                await waitFor(() => {
+                    expect(video?.currentTime).toEqual(666.001)
+                })
+
+                await triggerEvent(TriggerEvent.SEEK)
+
+                await new Promise((r) => setTimeout(r, 300));
+
+                done()
+            })
+
+            await renderFunction()
         })
     }
 
@@ -442,6 +534,10 @@ describe('App', () => {
         assertReceivingPause(spoofSuccessfulCreateSession, renderAndCreateSession)
 
         assertRenderingLocalVideo(spoofSuccessfulCreateSession, renderAndCreateSession)
+
+        assertSendingSeek(spoofSuccessfulCreateSession, renderAndCreateSession)
+
+        assertReceivingSeek(spoofSuccessfulCreateSession, renderAndCreateSession)
     })
 
     describe("joining an existing session", () => {
@@ -464,6 +560,10 @@ describe('App', () => {
         assertReceivingPause(spoofSuccessfulJoinSession, renderAndJoinSession)
 
         assertRenderingLocalVideo(spoofSuccessfulJoinSession, renderAndJoinSession)
+
+        assertSendingSeek(spoofSuccessfulJoinSession, renderAndJoinSession)
+
+        assertReceivingSeek(spoofSuccessfulJoinSession, renderAndJoinSession)
     })
 
     it('says when its connected to the server', async () => {

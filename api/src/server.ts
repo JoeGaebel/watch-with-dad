@@ -45,7 +45,7 @@ export default class Server {
                 break
             }
             case "SEND_MESSAGE": {
-                this.handleSendingMessage(receivedEvent, connection)
+                this.handleSendingMessage(receivedEvent)
                 break
             }
         }
@@ -90,7 +90,7 @@ export default class Server {
         connection.send(connectionSuccessful)
     }
 
-    handleSendingMessage(event: ClientSocketEvent, connection: WebSocket) {
+    handleSendingMessage(event: ClientSocketEvent) {
         const clientMessage = event as SendMessageEvent
         const session = this.sessions.get(event.sessionId)
         if (!session) {
@@ -98,7 +98,7 @@ export default class Server {
         }
 
         const sendMessage = JSON.stringify(new ServerMessage(clientMessage.message))
-
+        console.log(sendMessage)
         session.forEach((savedConnection: WebSocket, userId: string) => {
             if (userId === event.userId) return
             savedConnection.send(sendMessage)

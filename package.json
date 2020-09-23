@@ -6,8 +6,6 @@
   "license": "UNLICENSED",
   "scripts": {
     "build-docker-api": "./k8s/build-api",
-    "build-docker-ui": "./k8s/build-ui",
-    "run-docker-api": "docker run -p 9090:9090 -d joe/api:latest",
-    "run-docker-ui": "docker run -p 3000:80 -d joe/ui:latest"
+    "build-docker-ui": "./k8s/build-ui"
   }
 }
