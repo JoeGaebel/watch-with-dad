@@ -41,7 +41,11 @@ test('plays and pauses in sync', async (t: TestController) => {
       .withText(/Connected to session!/)
       .innerText).match(uuidRegex)![0]
 
+  await t.expect(Selector("video").visible).eql(false)
+
   await t.setFilesToUpload("input", topgun)
+
+  await t.expect(Selector("video").visible).eql(true)
 
   const isInitialVideoPaused = await getVideoPaused(t)
   await t.expect(isInitialVideoPaused).eql(true)

@@ -15,6 +15,7 @@ export default function VideoPlayer(props: VideoPlayerProps): JSX.Element {
         const file = event.target.files?.[0]
         if (file && videoRef.current) {
             videoRef.current.src = URL.createObjectURL(file)
+            videoRef.current.style.display = "initial"
         }
     }
 
@@ -31,6 +32,13 @@ export default function VideoPlayer(props: VideoPlayerProps): JSX.Element {
         socketMessager.current.sendPause(sessionId, userId);
     }
 
+    const videoStyle = {
+        userSelect: "none",
+        border: 0,
+        outline: 0,
+        display: "none"
+    }
+
     return <div data-testid="message-container">
         <input
             type="file"
@@ -40,11 +48,8 @@ export default function VideoPlayer(props: VideoPlayerProps): JSX.Element {
         />
         <br/>
         <video
-            style={{
-                userSelect: "none",
-                border: 0,
-                outline: 0,
-            }}
+            // @ts-ignore
+            style={videoStyle}
             id="video"
             data-testid="video"
             ref={videoRef}

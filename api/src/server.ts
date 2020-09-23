@@ -23,6 +23,7 @@ export default class Server {
         console.log(`Started server on ${port}`)
 
         this.socketServer.on("connection", (connection: WebSocket) => {
+            console.log("New connection")
             connection.onmessage = (event: WebSocket.MessageEvent) => {
                 this.triageMessage(event, connection)
             }
