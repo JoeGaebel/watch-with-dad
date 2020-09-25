@@ -47,6 +47,8 @@ function App() {
                 {connectedToSession && <SessionStatusContainer>
                     <div>Connected to session 🟢</div>
                     <br/>
+                    <UsersDisplay>{"👨‍💻".repeat(userCount)}</UsersDisplay>
+                    <br/>
                     <div data-testid="session-id">{sessionId}</div>
                 </SessionStatusContainer>}
             </div>
@@ -64,10 +66,7 @@ function App() {
                 </JoinSessionContainer>
             </div>}
 
-            {connectedToSession && <div>
-                <div>{userCount} Users in this session</div>
-                <VideoPlayer {...videoPlayerProps}/>
-            </div>}
+            {connectedToSession && <VideoPlayer {...videoPlayerProps}/>}
         </StyledApp>
     );
 }
@@ -94,6 +93,10 @@ const JoinSessionContainer = styled.div`
     margin-top: 0.5rem;
     display: flex;
     flex-direction: column;
+`
+
+const UsersDisplay = styled.div`
+    font-size: 2rem;
 `
 
 export default App;

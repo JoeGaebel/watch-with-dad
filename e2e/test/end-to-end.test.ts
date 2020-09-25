@@ -77,5 +77,5 @@ test('plays and pauses in sync', async (t: TestController) => {
   await t.switchToWindow(initialWindow);
   await t.expect(await getCurrentTime(t)).eql(30.01)
 
-  await t.expect(Selector("div").withText("2 Users in this session").exists).eql(true)
+  await t.expect(Selector("div").withText("👨‍💻👨‍💻").exists).eql(true)
 });

@@ -208,7 +208,7 @@ describe('App', () => {
 
             await spoofFunction(async () => {
                 await waitFor(() => {
-                    const connectedMessageRegex = new RegExp(`Connected to session 🟢${uuidRegex}`)
+                    const connectedMessageRegex = new RegExp(`Connected to session 🟢.*`)
                     expect(renderResult!.getByTestId("session-status").textContent).toMatch(connectedMessageRegex)
                 })
 
@@ -519,13 +519,13 @@ describe('App', () => {
             createServer();
 
             await spoofFunction(async (connection: WebSocket) => {
-                expect(renderResult!.queryByText("5 Users in Session")).toEqual(null)
+                expect(renderResult!.queryByText("👨‍💻👨‍💻👨‍💻👨‍💻👨‍💻")).toEqual(null)
 
                 const serverMessage = JSON.stringify(new UserCount(5))
                 connection.send(serverMessage)
 
                 await waitFor(() => {
-                    expect(renderResult!.queryByText("5 Users in this session")).toBeInTheDocument()
+                    expect(renderResult!.queryByText("👨‍💻👨‍💻👨‍💻👨‍💻👨‍💻")).toBeInTheDocument()
                 })
 
                 done()
