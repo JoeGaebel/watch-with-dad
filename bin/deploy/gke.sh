@@ -7,6 +7,4 @@ set -e
 ./bin/build/api.sh
 
 ./bin/util/switch-cloud.sh
-
 ./bin/run/k8s-cloud.sh
-bin/util/wait-until-pods-ready.sh 1000 1
