@@ -1,19 +1,12 @@
-import React, {MutableRefObject, useEffect, useRef, useState} from 'react';
+import React, {useRef, useState} from 'react';
 import VideoPlayer, {VideoPlayerProps} from "./VideoPlayer";
 import useSocketReducer from "./reducer";
-import useWebSocket from "./hooks/useWebSocket";
-import SocketMessenger from "./SocketMessenger";
-import {getWebSocketURL} from "./util";
+import useSubscriptionToWebSocket from "./hooks/useSubscriptionToWebSocket";
 import styled from "styled-components";
+import {useWebSocket} from "./hooks/useWebSocket";
 
 function App() {
-    const connection: MutableRefObject<WebSocket | null> = useRef(null)
-    const socketMessenger: MutableRefObject<SocketMessenger | null> = useRef(null)
-
-    useEffect(() => {
-        connection.current = new WebSocket(getWebSocketURL())
-        socketMessenger.current = new SocketMessenger(connection)
-    }, [])
+    const {connection, socketMessenger} = useWebSocket();
 
     const videoRef = useRef<HTMLVideoElement>(null)
     const [joinSessionIdInput, setJoinSessionIdInput] = useState('')
@@ -24,10 +17,11 @@ function App() {
         joinSessionFailure,
         createSessionFailure,
         sessionId,
+        userCount,
         userId
     }, dispatch] = useSocketReducer(videoRef, socketMessenger)
 
-    useWebSocket(connection, dispatch)
+    useSubscriptionToWebSocket(connection, dispatch)
 
     function createSession() {
         socketMessenger.current?.createSession(userId)
@@ -70,7 +64,10 @@ function App() {
                 </JoinSessionContainer>
             </div>}
 
-            {connectedToSession && <VideoPlayer {...videoPlayerProps}/>}
+            {connectedToSession && <div>
+                <div>{userCount} Users in this session</div>
+                <VideoPlayer {...videoPlayerProps}/>
+            </div>}
         </StyledApp>
     );
 }

@@ -4,7 +4,7 @@ import {
     CreatedSessionSuccessfully,
     JoinedSessionSuccessfully,
     ServerMessage,
-    ServerSocketEvent
+    ServerSocketEvent, UserCount
 } from "./types/shared";
 import uuid from "short-uuid"
 import SocketMessenger from "./SocketMessenger";
@@ -14,6 +14,7 @@ export const initialState: AppState = {
     connectedToSession: false,
     joinSessionFailure: false,
     createSessionFailure: false,
+    userCount: 0,
     sessionId: '',
     userId: uuid.generate()
 }
@@ -59,6 +60,10 @@ export function getReducer(
             }
             case "CREATE_SESSION_FAILURE": {
                 return {...state, createSessionFailure: true}
+            }
+            case "USER_COUNT": {
+                const userCountEvent = action as UserCount
+                return {...state, userCount: userCountEvent.users}
             }
         }
 

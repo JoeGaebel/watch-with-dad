@@ -1,4 +1,5 @@
 import * as WebSocket from "ws";
+import {CloseEvent} from "ws";
 import {
     ClientSocketEvent,
     CreatedSessionFailure,
@@ -8,9 +9,9 @@ import {
     JoinedSessionSuccessfully,
     JoinSessionEvent,
     SendMessageEvent,
-    ServerMessage
+    ServerMessage,
+    UserCount
 } from "../../ui/src/types/shared";
-import {CloseEvent} from "ws";
 
 const port = parseInt(process.env.VCAP_APP_PORT || "9090");
 
@@ -52,10 +53,18 @@ export default class Server {
         }
     }
 
-    handleNewSession(event: CreateSessionEvent, connection: WebSocket) {
-        const session = this.sessions.get(event.sessionId)
+    sendUserCount(session: Map<string, WebSocket>) {
+        const userCountMessage = JSON.stringify(new UserCount(session.size))
+        console.log(userCountMessage)
+        session.forEach((savedConnection: WebSocket, _: string) => {
+            savedConnection.send(userCountMessage)
+        })
+    }
 
-        if (session) {
+    handleNewSession(event: CreateSessionEvent, connection: WebSocket) {
+        const existingSession = this.sessions.get(event.sessionId)
+
+        if (existingSession) {
             const connectionFailed = JSON.stringify(new CreatedSessionFailure())
             connection.send(connectionFailed)
             return
@@ -65,12 +74,14 @@ export default class Server {
             this.cleanUpConnection(event.sessionId, event.userId)
         })
 
-        const users = new Map<string, WebSocket>()
-        users.set(event.userId, connection)
-        this.sessions.set(event.sessionId, users)
+        const newSession = new Map<string, WebSocket>()
+        newSession.set(event.userId, connection)
+        this.sessions.set(event.sessionId, newSession)
 
         const connectionSuccessful = JSON.stringify(new CreatedSessionSuccessfully(event.sessionId))
         connection.send(connectionSuccessful)
+
+        this.sendUserCount(newSession)
     }
 
     handleJoiningSession(event: JoinSessionEvent, connection: WebSocket) {
@@ -89,6 +100,8 @@ export default class Server {
 
         const connectionSuccessful = JSON.stringify(new JoinedSessionSuccessfully(event.sessionId))
         connection.send(connectionSuccessful)
+
+        this.sendUserCount(session)
     }
 
     handleSendingMessage(event: ClientSocketEvent) {
@@ -118,12 +131,14 @@ export default class Server {
 
             if (session.size === 0) {
                 this.sessions.delete(sessionId)
+            } else {
+                this.sendUserCount(session)
             }
         }
     }
 
     close() {
-       return new Promise((resolve) => {
+        return new Promise((resolve) => {
             this?.socketServer?.close(() => resolve())
         })
     }

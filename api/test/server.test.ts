@@ -2,11 +2,17 @@ import Server from "../src/server";
 import {
     CreatedSessionFailure,
     CreatedSessionSuccessfully,
-    CreateSessionEvent, JoinedSessionFailure,
+    CreateSessionEvent,
+    JoinedSessionFailure,
     JoinedSessionSuccessfully,
-    JoinSessionEvent, SendMessageEvent, ServerMessage
+    JoinSessionEvent,
+    SendMessageEvent,
+    ServerMessage,
+    UserCount
 } from "../../ui/src/types/shared";
 import uuid from "short-uuid"
+import buildSocketExpectation from "./SocketExpectation";
+import {waitForTruth} from "./util";
 
 const WebSocket = require("ws");
 
@@ -33,25 +39,23 @@ describe('Server', () => {
         connection.onopen = () => done() && connection.close()
     });
 
-    it('responds successfully creating a session', (done) => {
+    it('responds successfully creating a session', async () => {
         createServer();
 
         const createSession = new CreateSessionEvent(uuid.generate(), uuid.generate())
         const sender = new WebSocket("ws://localhost:9090")
 
-        sender.onmessage = (event: MessageEvent) => {
-            const response = JSON.parse(event.data) as CreatedSessionSuccessfully
-            expect(response.type).toEqual("CREATED_SESSION_SUCCESSFULLY")
-            expect(response.sessionId).toMatch(createSession.sessionId)
-            done()
-        }
+        const expectedEvent = new CreatedSessionSuccessfully(createSession.sessionId)
+        const socketExpectation = buildSocketExpectation().add(sender, expectedEvent)
 
         sender.onopen = () => {
             sender.send(JSON.stringify(createSession))
         }
+
+        await socketExpectation.toComplete()
     });
 
-    it('does not allow two sessions with the same id', (done) => {
+    it('does not allow two sessions with the same id', async () => {
         createServer();
 
         const sameUUID = uuid.generate()
@@ -60,26 +64,22 @@ describe('Server', () => {
 
         const sender = new WebSocket("ws://localhost:9090")
 
-        let count = 0
-        sender.onmessage = (event: MessageEvent) => {
-            if (count == 0) {
-                const response = JSON.parse(event.data) as CreatedSessionSuccessfully
-                expect(response.type).toEqual("CREATED_SESSION_SUCCESSFULLY")
-                count++
-            } else {
-                const response = JSON.parse(event.data) as CreatedSessionFailure
-                expect(response.type).toEqual("CREATE_SESSION_FAILURE")
-                done()
-            }
-        }
+        const expectedSuccess = new CreatedSessionSuccessfully(sameUUID)
+        const expectedFailure = new CreatedSessionFailure()
+
+        const expectation = buildSocketExpectation()
+            .add(sender, expectedSuccess)
+            .add(sender, expectedFailure)
 
         sender.onopen = () => {
             sender.send(JSON.stringify(createSession))
             sender.send(JSON.stringify(createSession))
         }
+
+        await expectation.toComplete()
     });
 
-    it('allows joining a session', (done) => {
+    it('allows joining a session', async () => {
         createServer();
 
         const sessionId = uuid.generate()
@@ -90,44 +90,36 @@ describe('Server', () => {
         const user1 = new WebSocket("ws://localhost:9090")
         const user2 = new WebSocket("ws://localhost:9090")
 
-        user1.onmessage = (event: MessageEvent) => {
-            const response = JSON.parse(event.data) as CreatedSessionSuccessfully
-            expect(response.type).toEqual("CREATED_SESSION_SUCCESSFULLY")
+        const expectedCreateMessage = new CreatedSessionSuccessfully(sessionId);
+        const expectedJoinMessage = new JoinedSessionSuccessfully(sessionId);
 
-            user2.send(JSON.stringify(joinSession))
-        }
+        const expectation = buildSocketExpectation()
+            .add(user1, expectedCreateMessage, () => user2.send(JSON.stringify(joinSession)))
+            .add(user2, expectedJoinMessage)
 
-        user2.onmessage = (event: MessageEvent) => {
-            const response = JSON.parse(event.data) as JoinedSessionSuccessfully
-            expect(response.type).toEqual("JOINED_SESSION_SUCCESSFULLY")
-            expect(response.sessionId).toEqual(sessionId)
-            done()
-        }
+        user1.onopen = () => user1.send(JSON.stringify(createSession))
 
-        user1.onopen = () => {
-            user1.send(JSON.stringify(createSession))
-        }
+        await expectation.toComplete()
     });
 
-    it('returns an error if there is no session to join', (done) => {
+    it('returns an error if there is no session to join', async () => {
         createServer();
 
         const joinSession = new JoinSessionEvent(uuid.generate(), uuid.generate())
 
         const user = new WebSocket("ws://localhost:9090")
 
-        user.onmessage = (event: MessageEvent) => {
-            const response = JSON.parse(event.data) as JoinedSessionFailure
-            expect(response.type).toEqual("JOIN_SESSION_FAILURE")
-            done()
-        }
+        const expectation = buildSocketExpectation()
+            .add(user, new JoinedSessionFailure())
 
         user.onopen = () => {
             user.send(JSON.stringify(joinSession))
         }
+
+        await expectation.toComplete()
     });
 
-    it('forwards a message from one client to the other', (done) => {
+    it('forwards a message from one client to the other', async () => {
         createServer();
 
         const sessionId = uuid.generate()
@@ -140,57 +132,50 @@ describe('Server', () => {
         const user1 = new WebSocket("ws://localhost:9090")
         const user2 = new WebSocket("ws://localhost:9090")
 
-        let user1MessageCount = 0
-        user1.onmessage = (event: MessageEvent) => {
-            if (user1MessageCount == 0) {
-                const response = JSON.parse(event.data) as CreatedSessionSuccessfully
-                expect(response.type).toEqual("CREATED_SESSION_SUCCESSFULLY")
-
-                user2.send(JSON.stringify(joinSession))
-                user1MessageCount++
-            } else {
-                const response = JSON.parse(event.data) as ServerMessage
-                expect(response.type).toEqual("SERVER_MESSAGE")
-                expect(response.message).toEqual("G'Day m8!")
-
-                done()
-            }
-        }
-
-        user2.onmessage = (event: MessageEvent) => {
-            const response = JSON.parse(event.data) as JoinedSessionSuccessfully
-            expect(response.type).toEqual("JOINED_SESSION_SUCCESSFULLY")
-            const message = JSON.stringify(new SendMessageEvent("G'Day m8!", sessionId, user2Id))
-
-            user2.send(message)
-        }
+        const expectation = buildSocketExpectation()
+            .add(user1, new CreatedSessionSuccessfully(sessionId), () => user2.send(JSON.stringify(joinSession)))
+            .add(user1, new ServerMessage("G'Day m8!"))
+            .add(user2, new JoinedSessionSuccessfully(sessionId), () => {
+                const message = JSON.stringify(new SendMessageEvent("G'Day m8!", sessionId, user2Id))
+                user2.send(message)
+            })
 
         user1.onopen = () => {
             user1.send(JSON.stringify(createSession))
         }
+
+        await expectation.toComplete()
+    })
+
+    it('keeps users updated on the user count', async () => {
+        createServer();
+
+        const sessionId = uuid.generate()
+        const user1Id = uuid.generate();
+        const user2Id = uuid.generate();
+
+        const createSession = new CreateSessionEvent(sessionId, user1Id)
+        const joinSession = new JoinSessionEvent(sessionId, user2Id)
+
+        const creatorUser = new WebSocket("ws://localhost:9090")
+        const joinerUser = new WebSocket("ws://localhost:9090")
+
+        const expectation = buildSocketExpectation()
+            .add(creatorUser, new CreatedSessionSuccessfully(sessionId))
+            .add(creatorUser, new UserCount(1), () => joinerUser.send(JSON.stringify(joinSession)))
+            .add(creatorUser, new UserCount(2))
+            .add(creatorUser, new UserCount(1))
+            .add(joinerUser, new JoinedSessionSuccessfully(sessionId))
+            .add(joinerUser, new UserCount(2), () => joinerUser.close())
+
+        creatorUser.onopen = () => {
+            creatorUser.send(JSON.stringify(createSession))
+        }
+
+        await expectation.toComplete()
     })
 
     describe("session management", () => {
-        function sleep(ms: number) {
-            return new Promise(resolve => setTimeout(resolve, ms));
-        }
-
-        function waitForTruth(test: () => boolean, attempts: number): Promise<void> {
-            return new Promise<void>(async (resolve, reject) => {
-                let i = 0;
-                while (i < attempts) {
-                    if (test()) {
-                        return resolve()
-                    }
-
-                    await sleep(1000)
-                    i++
-                }
-                fail()
-                reject()
-            })
-        }
-
         async function checkClosingBehavior(
             sessionId: string,
             done: jest.DoneCallback,
@@ -213,7 +198,7 @@ describe('Server', () => {
             done()
         }
 
-        it('cleans up users and sessions', (done) => {
+        it('cleans up users and sessions', async (done) => {
             createServer();
 
             const sessionId = uuid.generate()
@@ -223,23 +208,15 @@ describe('Server', () => {
             const user1 = new WebSocket("ws://localhost:9090")
             const user2 = new WebSocket("ws://localhost:9090")
 
-            user1.onmessage = (event: MessageEvent) => {
-                const response = JSON.parse(event.data) as CreatedSessionSuccessfully
-                expect(response.type).toEqual("CREATED_SESSION_SUCCESSFULLY")
-
-                user2.send(JSON.stringify(joinSession))
-            }
-
-            user2.onmessage = (event: MessageEvent) => {
-                const response = JSON.parse(event.data) as JoinedSessionSuccessfully
-                expect(response.type).toEqual("JOINED_SESSION_SUCCESSFULLY")
-
-                checkClosingBehavior(sessionId, done, user1, user2)
-            }
+            const expectation = buildSocketExpectation()
+                .add(user1, new CreatedSessionSuccessfully(sessionId), () => user2.send(JSON.stringify(joinSession)))
+                .add(user2, new JoinedSessionSuccessfully(sessionId), () => checkClosingBehavior(sessionId, done, user1, user2))
 
             user1.onopen = () => {
                 user1.send(JSON.stringify(createSession))
             }
+
+            await expectation.toComplete()
         });
     });
 })

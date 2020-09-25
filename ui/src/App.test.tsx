@@ -9,7 +9,7 @@ import {
     JoinedSessionFailure,
     JoinedSessionSuccessfully,
     SendMessageEvent,
-    ServerMessage
+    ServerMessage, UserCount
 } from "./types/shared";
 import flushPromises from "flush-promises";
 import uuid from "short-uuid"
@@ -511,6 +511,30 @@ describe('App', () => {
         })
     }
 
+    function assertReceivingUserCount(
+        spoofFunction: (arg: any) => Promise<void>,
+        renderFunction: () => Promise<RenderResult>
+    ) {
+        it('displays the count of the users', async (done) => {
+            createServer();
+
+            await spoofFunction(async (connection: WebSocket) => {
+                expect(renderResult!.queryByText("5 Users in Session")).toEqual(null)
+
+                const serverMessage = JSON.stringify(new UserCount(5))
+                connection.send(serverMessage)
+
+                await waitFor(() => {
+                    expect(renderResult!.queryByText("5 Users in this session")).toBeInTheDocument()
+                })
+
+                done()
+            })
+
+            await renderFunction()
+        })
+    }
+
     describe("creating a session", () => {
         assertOpeningSessionCorrectly(false, renderAndCreateSession)
 
@@ -535,6 +559,8 @@ describe('App', () => {
         assertSendingSeek(spoofSuccessfulCreateSession, renderAndCreateSession)
 
         assertReceivingSeek(spoofSuccessfulCreateSession, renderAndCreateSession)
+
+        assertReceivingUserCount(spoofSuccessfulCreateSession, renderAndCreateSession)
     })
 
     describe("joining an existing session", () => {
@@ -561,6 +587,8 @@ describe('App', () => {
         assertSendingSeek(spoofSuccessfulJoinSession, renderAndJoinSession)
 
         assertReceivingSeek(spoofSuccessfulJoinSession, renderAndJoinSession)
+
+        assertReceivingUserCount(spoofSuccessfulJoinSession, renderAndJoinSession)
     })
 
     it('says when its connected to the server', async () => {

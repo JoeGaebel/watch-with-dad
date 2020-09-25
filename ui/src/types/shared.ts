@@ -28,6 +28,14 @@ export class CreatedSessionSuccessfully extends ServerSocketEvent {
     }
 }
 
+export class UserCount extends ServerSocketEvent {
+    users: number
+    constructor(users: number) {
+        super("USER_COUNT")
+        this.users = users
+    }
+}
+
 export class CreatedSessionFailure extends ServerSocketEvent {
     constructor() {
         super("CREATE_SESSION_FAILURE")
@@ -83,6 +91,7 @@ export class SendMessageEvent extends ClientSocketEvent {
 }
 
 export interface AppState {
+    userCount: number,
     connectedToServer: boolean,
     connectedToSession: boolean,
     joinSessionFailure: boolean,

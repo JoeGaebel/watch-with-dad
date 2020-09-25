@@ -1,28 +1,15 @@
-import {Dispatch, MutableRefObject, useEffect} from "react";
-import {ConnectedToServerSuccessfully, ServerSocketEvent} from "../types/shared";
+import {MutableRefObject, useEffect, useRef} from "react";
+import SocketMessenger from "../SocketMessenger";
+import {getWebSocketURL} from "../util";
 
-export default function useWebSocket(connection: MutableRefObject<WebSocket | null>, dispatch: Dispatch<ServerSocketEvent>) {
+export function useWebSocket() {
+    const connection: MutableRefObject<WebSocket | null> = useRef(null)
+    const socketMessenger: MutableRefObject<SocketMessenger | null> = useRef(null)
+
     useEffect(() => {
-        function subscribeToSocketOpening() {
-            if (!connection.current) { return }
-            connection.current.onopen = () => {
-                const event = new ConnectedToServerSuccessfully()
-                dispatch(event)
-            }
-        }
+        connection.current = new WebSocket(getWebSocketURL())
+        socketMessenger.current = new SocketMessenger(connection)
+    }, [])
 
-        function subscribeToSocketMessage() {
-            if (!connection.current) { return }
-            connection.current.onmessage = (event: MessageEvent) => {
-                try {
-                    const parsedEvent = JSON.parse(event.data) as ServerSocketEvent
-                    dispatch(parsedEvent)
-                } catch (error) {
-                }
-            }
-        }
-
-        subscribeToSocketOpening();
-        subscribeToSocketMessage();
-    }, [connection, dispatch])
+    return {connection, socketMessenger};
 }
