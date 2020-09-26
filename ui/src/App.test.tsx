@@ -1,5 +1,5 @@
 import React from 'react';
-import {act, fireEvent, render, RenderResult, waitFor} from '@testing-library/react';
+import {act, cleanup, fireEvent, render, RenderResult, waitFor} from '@testing-library/react';
 import App from './App';
 import * as WebSocket from 'ws'
 import {
@@ -14,9 +14,9 @@ import {
 } from "./types/shared";
 import flushPromises from "flush-promises";
 import uuid from "short-uuid"
+import * as Util from './util'
 // @ts-ignore
 import topgun from '../../topgun.mp4'
-import * as Util from './util'
 
 describe('App', () => {
     let server: WebSocket.Server
@@ -62,9 +62,6 @@ describe('App', () => {
     }
 
     beforeEach(async () => {
-        renderResult?.unmount()
-        await flushPromises()
-
         renderResult = null
 
         jest.resetAllMocks()
@@ -93,6 +90,9 @@ describe('App', () => {
         })
 
         await flushPromises()
+
+        renderResult?.unmount()
+        cleanup()
     })
 
     function createServer() {
