@@ -39,7 +39,7 @@ function App() {
                 {
                     connectedToServer ?
                         <div>Connected to server 🟢</div> :
-                        <div>Connecting to server... 🔴</div>
+                        <div>Connecting to server 🔴</div>
                 }
             </div>
 

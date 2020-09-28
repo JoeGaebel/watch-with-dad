@@ -630,7 +630,7 @@ describe('App', () => {
         createServer();
 
         const {getByText} = render(<App/>)
-        const status = getByText("Connecting to server... 🔴")
+        const status = getByText("Connecting to server 🔴")
         expect(status).not.toBeEmpty()
 
         await waitFor(() => {
@@ -642,7 +642,7 @@ describe('App', () => {
         createServer();
 
         const {getByText, queryByTestId} = render(<App/>)
-        const status = getByText("Connecting to server... 🔴")
+        const status = getByText("Connecting to server 🔴")
         expect(status).not.toBeEmpty()
 
         expect(queryByTestId("session-container")).not.toBeInTheDocument()
