@@ -32,11 +32,8 @@ killItByPort 9090
 ./bin/util/switch-local.sh
 ./bin/util/kill-all-k8s.sh
 
-(cd ui && yarn install && REACT_APP_BACKEND_URL="" yarn build && yarn test)
-(cd api && yarn install && yarn build && yarn test)
-
-./bin/build/ui.sh
-./bin/build/api.sh
+./bin/build/ui-k8s.sh
+./bin/build/api-k8s.sh
 
 ./bin/run/k8s-local.sh
 minikube tunnel -c 2>&1 > /dev/null &

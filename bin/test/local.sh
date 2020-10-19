@@ -30,8 +30,8 @@ function wait_for_port()
 killItByPort 3000
 killItByPort 9090
 
-(cd ui && yarn install && REACT_APP_BACKEND_URL="ws://localhost:9090" yarn build && yarn test)
-(cd api && yarn install && yarn build && yarn test)
+./bin/build/api-local.sh
+./bin/build/ui-local.sh
 
 (cd ui && yarn start | cat - &) > /dev/null 2>&1
 wait_for_port 3000
