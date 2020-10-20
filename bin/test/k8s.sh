@@ -17,8 +17,7 @@ killItByPort() {
     kill $(lsof -t -i:$1) > /dev/null 2>&1 || echo 0 > /dev/null 2>&1
 }
 
-function wait_for_port()
-{
+function wait_for_port() {
     local PORT=$1
     while ! nc -z localhost $PORT &>/dev/null; do
         sleep 0.5;
