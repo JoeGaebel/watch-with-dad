@@ -8,6 +8,7 @@ spec:
   selector:
     matchLabels:
       app: watch-with-dad-ui
+  revisionHistoryLimit: 3
   template:
     metadata:
       labels:
