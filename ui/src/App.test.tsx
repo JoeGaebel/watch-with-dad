@@ -109,7 +109,7 @@ describe('App', () => {
         renderResult = render(<App/>)
 
         await waitFor(() => {
-            expect(renderResult!.getByText('Connected to server 🟢')).toBeInTheDocument()
+            expect(renderResult!.getByText('Connected to server ✅')).toBeInTheDocument()
         })
 
         const sessionIdInput = renderResult.getByTestId("session-id")
@@ -125,7 +125,7 @@ describe('App', () => {
         renderResult = render(<App/>)
 
         await waitFor(() => {
-            expect(renderResult!.getByText('Connected to server 🟢')).toBeInTheDocument()
+            expect(renderResult!.getByText('Connected to server ✅')).toBeInTheDocument()
         })
 
         const createSessionButton = renderResult.getByText('Create Session')
@@ -227,7 +227,7 @@ describe('App', () => {
 
         await successMockFunction(async () => {
             await waitFor(() => {
-                const connectedMessageRegex = new RegExp(`Connected to session 🟢.*`)
+                const connectedMessageRegex = new RegExp(`Connected to session ✅.*`)
                 expect(renderResult!.getByTestId("session-status").textContent).toMatch(connectedMessageRegex)
             })
 
@@ -634,7 +634,7 @@ describe('App', () => {
         expect(status).not.toBeEmpty()
 
         await waitFor(() => {
-            expect(getByText('Connected to server 🟢')).toBeInTheDocument()
+            expect(getByText('Connected to server ✅')).toBeInTheDocument()
         })
     });
 
@@ -648,7 +648,7 @@ describe('App', () => {
         expect(queryByTestId("session-container")).not.toBeInTheDocument()
 
         await waitFor(() => {
-            expect(getByText('Connected to server 🟢')).toBeInTheDocument()
+            expect(getByText('Connected to server ✅')).toBeInTheDocument()
             expect(queryByTestId("session-container")).toBeInTheDocument()
         })
     });

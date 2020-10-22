@@ -38,14 +38,14 @@ function App() {
             <div data-testid="status">
                 {
                     connectedToServer ?
-                        <div>Connected to server 🟢</div> :
+                        <div>Connected to server ✅</div> :
                         <div>Connecting to server 🔴</div>
                 }
             </div>
 
             <div data-testid="session-status">
                 {connectedToSession && <SessionStatusContainer>
-                    <div>Connected to session 🟢</div>
+                    <div>Connected to session ✅</div>
                     <br/>
                     <UsersDisplay>{"👨‍💻".repeat(userCount)}</UsersDisplay>
                     <br/>
