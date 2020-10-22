@@ -1,3 +1,3 @@
-kubectl delete --all deployments --namespace watch-with-dad > /dev/null &
-kubectl delete --all services --namespace watch-with-dad > /dev/null &
-kubectl delete --all pods --namespace watch-with-dad > /dev/null &
+kubectl delete deployments -l project=watch-with-dad > /dev/null &
+kubectl delete services -l project=watch-with-dad > /dev/null &
+kubectl delete pods -l project=watch-with-dad > /dev/null &
